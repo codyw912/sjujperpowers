@@ -3,7 +3,7 @@
 Two kinds of tests:
 
 - **`tests/`** — does the plugin's non-LLM code work? Bash, node, and python integration tests.
-- **`evals/`** — upstream LLM-session harness. Not vendored in this fork.
+- **`evals/`** — does an agent follow the skills in a real session? Hand-run scenarios ported from upstream's Quorum lab; see `evals/README.md`.
 
 ## Plugin tests
 
@@ -26,4 +26,4 @@ Run plugin tests via the relevant directory's `run-*.sh` or `npm test`.
 
 ## Skill behavior evals
 
-The upstream `evals/` harness is not vendored. Plugin-infrastructure tests still live at `tests/`.
+`evals/` holds a small set of scenarios ported from upstream's [superpowers-evals](https://github.com/prime-radiant-inc/superpowers-evals) to jj, without the Quorum harness: you build the fixture with `evals/run setup <scenario>`, play the human per `story.md` in the harness under test, then `evals/run post` for the deterministic backstop. Grading the acceptance criteria is manual. Details and the scenario list are in `evals/README.md`.

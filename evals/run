@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Manual eval driver. No harness, no second LLM: you play the human.
+#
+#   evals/run setup <scenario>     build the fixture in a temp dir, run pre-checks,
+#                                  print the story and the directory to start your agent in
+#   evals/run post <scenario> <dir> run post-checks against the fixture after the session
+#   evals/run list                 scenarios and their status
+#
+# Grade the acceptance criteria in story.md yourself from the transcript;
+# post-checks are the deterministic backstop only.
+set -euo pipefail
+
+here=$(cd "$(dirname "$0")" && pwd)
+cmd=${1:-}; shift || true
+
+case "$cmd" in
+  list)
+    for d in "$here"/scenarios/*/; do
+      s=$(basename "$d")
+      status=$(sed -n 's/^status: //p' "$d/story.md" | head -1)
+      title=$(sed -n 's/^title: //p' "$d/story.md" | head -1)
+      printf '%-48s %-6s %s\n' "$s" "$status" "$title"
+    done
+    ;;
+  setup)
+    scenario=${1:?scenario name}
+    dir="$here/scenarios/$scenario"
+    [ -d "$dir" ] || { echo "no such scenario: $scenario" >&2; exit 2; }
+    fixture=$(mktemp -d)/repo
+    # shellcheck disable=SC1091
+    . "$here/lib/fixtures.sh"
+    # shellcheck disable=SC1091
+    . "$dir/setup.sh"
+    setup "$fixture"
+    cd "$fixture"
+    # shellcheck disable=SC1091
+    . "$here/lib/checks.sh"
+    run-checks pre "$dir" || { echo "pre-checks failed; fixture is misconfigured" >&2; exit 2; }
+    echo
+    sed -n '/^---$/,/^---$/!p' "$dir/story.md"
+    echo
+    echo "Fixture ready. Start your agent in:"
+    echo "  cd $fixture"
+    echo "Afterwards: evals/run post $scenario $fixture"
+    ;;
+  post)
+    scenario=${1:?scenario name}; fixture=${2:?fixture dir}
+    dir="$here/scenarios/$scenario"
+    cd "$fixture"
+    # shellcheck disable=SC1091
+    . "$here/lib/checks.sh"
+    run-checks post "$dir"
+    ;;
+  *)
+    sed -n '2,10p' "$0"; exit 2;;
+esac
