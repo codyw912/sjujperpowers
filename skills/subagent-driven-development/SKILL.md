@@ -87,7 +87,7 @@ digraph process {
     "More tasks remain?" [shape=diamond];
     "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [shape=box];
     "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" [shape=box];
-    "Final review clean: delete this plan's workspace" [shape=box];
+    "Final review clean: preserve recovery workspace for finishing" [shape=box];
     "Use sjujperpowers:finishing-a-change-stack" [shape=box style=filled fillcolor=lightgreen];
 
     "Setup: isolated change, ledger check, read plan, pre-flight review" -> "Dispatch implementer subagent (./implementer-prompt.md)";
@@ -116,17 +116,14 @@ digraph process {
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
     "More tasks remain?" -> "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [label="no"];
     "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" -> "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals";
-    "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" -> "Final review clean: delete this plan's workspace";
-    "Final review clean: delete this plan's workspace" -> "Use sjujperpowers:finishing-a-change-stack";
+    "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" -> "Final review clean: preserve recovery workspace for finishing";
+    "Final review clean: preserve recovery workspace for finishing" -> "Use sjujperpowers:finishing-a-change-stack";
 }
 ```
 
 ## Setup
 
-Start on a fresh change: use sjujperpowers:starting-a-change (its
-`scripts/fresh-change` reuses an empty `@`, stacks on described work, and
-steps beside loose WIP). Never build inside a change that already holds
-someone else's undescribed work.
+Before repository mutation, read the named plan and approved spec, use sjujperpowers:tracking-providers, and obtain the plan's materialized child mapping. If a recovery ledger already exists, reconcile it first and select the lowest-numbered open child without `Task <N>: complete`; otherwise select Task 1. Start on a fresh change with sjujperpowers:starting-a-change and supply that exact ref. Never use project-wide ready ordering for a named plan. The starting skill runs checked preflight again, claims/associates the child, and then reuses an empty `@`, stacks on described work, or steps beside loose WIP. Never build inside a change that already holds someone else's undescribed work.
 
 Conversation memory does not survive compaction. In real sessions,
 controllers that lost their place have re-dispatched entire completed task
@@ -147,6 +144,8 @@ a ledger file, not only in todos.
   plan's progress: leave it in place and start your own, fresh.
 - Create the ledger with its identity as the first line:
   `# SDD ledger — plan: <plan file path>`.
+- Use sjujperpowers:tracking-providers and retain the normalized provider selection. For Kata, record the materialized parent ref and each `Task <N>: Kata <qualified-ref>` in this recovery ledger. These are recovery pointers, not a second lifecycle ledger.
+- On resume, reconcile the ledger with `kata show` before dispatch. A closed child without `Task <N>: complete` or with an unfinished review round is a contradiction: stop and resolve it. A complete ledger task with an open Kata child is expected before landing. A claim owned by another actor is a conflict; never force it.
 - The ledger is your recovery map: the change IDs it names survive rebase,
   squash, and describe even when your context no longer remembers creating
   them. After compaction, trust the ledger and `jj log` over your own
@@ -244,6 +243,21 @@ any that finished without reporting. A bounded stretch keeps nearly
 all of a long wait's efficiency while guaranteeing a stuck or lost
 child is noticed within minutes, not at the end of the session.
 
+### 0. Claim and associate durable work
+
+Harness todos and this recovery ledger remain mandatory under every execution provider.
+
+For Kata, use the materialized child matching the task number. Task 1 was claimed and associated by starting-a-change. Before any repository mutation for every later task:
+
+1. run the checked provider resolver;
+2. claim the child without `--force`;
+3. ensure `@` is the fresh task change;
+4. describe it with the issue title and `Kata: <project>#<short_id>`;
+5. comment on the issue with the stable Jujutsu change ID;
+6. append the qualified ref to the recovery ledger.
+
+A preflight or claim failure stops before dispatching the implementer.
+
 ### 1. Dispatch the implementer
 
 Record BASE before dispatching — the review package and fix-round diffs
@@ -303,11 +317,11 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 **NEEDS_CONTEXT:** The implementer needs information that wasn't provided. Provide the missing context and re-dispatch.
 
 **BLOCKED:** The implementer cannot complete the task. Assess the blocker:
-1. If it's a context problem, provide more context and re-dispatch with the same model
-2. If the task requires more reasoning, re-dispatch with a more capable model
-3. If the task is too large, break it into smaller pieces
-4. If the plan itself is wrong, rule on the correction, ledger it, and re-dispatch with the ruling carried in the dispatch
-
+1. If it's a context problem, provide more context and re-dispatch with the same model.
+2. If the task requires more reasoning, re-dispatch with a more capable model.
+3. If the task is too large, break it into smaller pieces.
+4. If the plan itself is wrong, rule on the correction, ledger it, and re-dispatch with the ruling carried in the dispatch.
+5. With Kata, run `kata --project <project> --json label add <ref> blocked --comment "<attempt, blocker, and required next action>"`. Remove `blocked` only after deliberate reconciliation; never close the issue for a blocker.
 **Never** ignore an escalation or force the same model to retry without changes. If the implementer said it's stuck, something needs to change.
 
 If the implementer asks questions — before starting or mid-task — answer
@@ -452,6 +466,8 @@ Then mark the todo complete and move on. Never move to the next task while
 the review has open Critical/Important issues that are neither fixed nor
 parked-with-ruling at the cap.
 
+With Kata, add a substantive comment to the task child naming the reviewed scope, exact verification command and result, and stable Jujutsu change ID. Keep the child open until finishing-a-change-stack completes the configured landing or publication event.
+
 ## Final Review
 
 The final whole-branch review gets a package too: run
@@ -488,10 +504,9 @@ took on your human partner's behalf reach them — they read it and rework
 whatever you got wrong. A ruling that dies with the workspace was a decision
 made in secret.
 
-When the final whole-branch review is clean and its fixes are merged,
-delete this plan's workspace (`rm -rf <workspace>`) — `jj log` is
-the record now. Sibling directories belong to other plans; leave them
-alone.
+When the final whole-branch review is clean and its fixes are merged, hand the plan path, recovery-workspace path, Kata parent/child refs, verification commands, and collected rulings to sjujperpowers:finishing-a-change-stack.
+
+Do not delete the per-plan recovery workspace yet. Finishing removes it only after a successful local landing or confirmed discard. Pull-request and keep-as-is outcomes retain it because the stack remains resumable.
 
 Use sjujperpowers:finishing-a-change-stack.
 
@@ -571,7 +586,7 @@ Re-reviewer: Missing progress reporting — ADDRESSED (src/recovery.js:41).
 [Run review-package PLAN_FILE MERGE_BASE HEAD; dispatch final code-reviewer, most capable model]
 Final reviewer: All requirements met. Deferred minors triaged: none block merge.
 
-[Delete this plan's workspace — the record now lives in jj]
+[Preserve this plan's recovery workspace and hand its path to finishing]
 
 Done! Using sjujperpowers:finishing-a-change-stack.
 ```

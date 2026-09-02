@@ -41,6 +41,9 @@ misconfigured, not that the agent failed.
 | `sdd-fix-loop-resumes-implementer` | planted spec gap handled via sanctioned routes | same name |
 | `sdd-re-review-scoped` | mid-loop resume, scoped re-review | same name |
 | `sdd-same-plan-resume` | ledger prevents re-dispatching Task 1 | same name |
+| `tracking-providers-plane` | Plane outcome references flow into specs and plans without a file roadmap | new |
+| `tracking-providers-kata` | checked preflight, named-plan recovery, claim-before-association, and keep-open completion | new |
+| `tracking-providers-kata-landed` | landing-before-close ordering, child-before-root close, and delayed recovery cleanup | new |
 
 ## Writing one
 

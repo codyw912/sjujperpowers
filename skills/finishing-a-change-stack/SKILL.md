@@ -7,11 +7,17 @@ description: Use when implementation is complete, all tests pass, and you need t
 
 ## Overview
 
-**Core principle:** Verify tests → Update the roadmap → Show the stack → Shape it → Present options → Execute choice → Clean up.
+**Core principle:** Preflight providers → Verify tests → Record evidence → Update the roadmap → Show and shape the stack → Present options → Execute choice → Finalize provider state → Clean up.
 
 **Announce at start:** "I'm using the finishing-a-change-stack skill to complete this work."
 
 If `jj root` fails, stop: "This isn't a jj repo. Run `jj git init --colocate` and re-run, or tell me to continue without VCS steps."
+
+## Step 0: Resolve Tracking
+
+**REQUIRED SUB-SKILL:** Use sjujperpowers:tracking-providers.
+
+Run its checked resolver before any roadmap, issue, or repository mutation. Retain the plan path, source, configured completion event, Kata parent/child refs, stable Jujutsu change IDs, and SDD recovery-workspace path supplied by the execution skill. A Kata preflight failure stops before completion bookkeeping.
 
 ## Step 1: Verify Tests
 
@@ -25,15 +31,17 @@ Tests failing (<N> failures). Must fix before completing:
 [Show failures]
 ```
 
-**If tests pass:** continue to Step 2.
+**If tests pass:** for Kata, comment on each implemented child with its issue-specific verified scope, exact command and result, and stable Jujutsu change ID. This records evidence but MUST NOT close anything. Continue to Step 2.
 
 ## Step 2: Update the Roadmap
 
-Runs before the stack is inspected so the edit is part of what lands. If `docs/sjujperpowers/roadmap.md` is missing, skip silently.
+Branch on the resolved roadmap provider:
 
-If the plan names a milestone: make sure this plan's path is listed under that milestone's `**Plans:**` — writing-plans normally added it already; add it only if missing. If the milestone's `**Done when:**` is now satisfied, set `**Status:** done` and ask (one question) whether the next planned milestone is still the right next step.
+- `file`: if `docs/sjujperpowers/roadmap.md` is absent, skip. Otherwise ensure the plan path appears under its source milestone. If that milestone's `**Done when:**` is satisfied, set `**Status:** done` and ask one question whether the next planned milestone is still correct.
+- `plane`: do not edit the file roadmap or mutate Plane. Prepare a curated roll-up containing accepted scope, issue refs, verification, and the eventual completion result.
+- `none`: skip roadmap mutation.
 
-The edit lands in `@`; Step 3 describes it. A later discard abandons it with the rest of the stack.
+Any file-roadmap edit lands in `@`; Step 3 describes it. A later confirmed discard abandons it with the rest of the stack.
 
 ## Step 3: Show the Stack
 
@@ -119,13 +127,38 @@ Type 'discard' to confirm.
 
 Wait for that exact word. Then: `jj abandon "$TRUNK..@"`.
 
-## Step 6: Workspace Cleanup
+## Step 6: Finalize Provider State
 
-Only if this work ran in a `.workspaces/<name>/` directory created by starting-a-change. Anything else belongs to the host — leave it.
+For `session` and `none`, continue to cleanup.
 
-Runs for option 1 and confirmed discards. Options 2 and 3 keep the workspace.
+For Kata, branch on the completed action:
+
+- **Local land + `completion=landed`:** after the bookmark moves successfully, derive each shaped final commit ID. Close each child sequentially with an issue-specific message, `--commit <commit-id>`, and `--test <exact-command>`. Then verify every child is closed and the `sjujperpowers-plan` parent has no open blocking predecessors before closing it with reviewed plan/spec paths and the aggregate verification command.
+- **PR created + `completion=pull_request`:** only after `gh pr create` returns a URL, close each child with `--pr <url>` and its verification evidence. Close the `sjujperpowers-plan` parent only after all child blockers are closed and local acceptance criteria pass.
+- **PR created + `completion=landed`:** comment with the PR URL and leave every issue open.
+- **Keep as-is:** comment with current change IDs and leave every issue open.
+- **Confirmed discard or failed land/publication:** comment with the result and leave every issue open.
+
+Use the exact Kata close contract:
+
+```bash
+kata --project <project> --json close <ref> \
+  --reason done \
+  --message "<issue-specific completed scope and Jujutsu change ID>" \
+  --commit <final-commit-id> \
+  --test "<verification command>"
+```
+
+For pull-request completion, replace `--commit` with `--pr <url>` when a stable final commit is not available. Never close or claim the `sjujperpowers-plan` parent while a child blocker or local acceptance criterion remains open.
+For Plane, render one curated roll-up after the action and Kata finalization. Do not apply it or close the external outcome automatically.
+
+## Step 7: Workspace Cleanup
+
+For a `.workspaces/<name>/` directory created by starting-a-change, cleanup runs only after local land or confirmed discard. Anything else belongs to the host. Pull-request and keep-as-is outcomes retain the workspace.
 
 If cwd is that workspace, return to the default workspace first. Then `jj workspace forget <name>` and remove the directory.
+
+If subagent-driven development supplied a per-plan recovery workspace, remove only that exact directory after successful local land or confirmed discard. Retain it for pull-request and keep-as-is outcomes so the stack remains resumable.
 
 ## Quick Reference
 

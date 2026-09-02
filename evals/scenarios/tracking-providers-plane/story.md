@@ -1,7 +1,7 @@
 ---
 id: tracking-providers-plane
 title: Plane roadmap references flow into specs and plans without a file roadmap
-status: ready
+status: draft
 tags: tracking-providers, roadmapping, brainstorming, writing-plans
 ---
 

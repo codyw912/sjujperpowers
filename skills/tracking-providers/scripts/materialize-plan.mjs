@@ -28,23 +28,49 @@ function assertTasks(tasks) {
   }
 }
 
+function withoutFencedCode(markdown) {
+  let fence = null;
+  return markdown
+    .split('\n')
+    .map((line) => {
+      const marker = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+      if (fence === null) {
+        if (marker === null) return line;
+        fence = { character: marker[1][0], length: marker[1].length };
+        return '';
+      }
+
+      const closingMarker = line.match(/^\s{0,3}(`{3,}|~{3,})\s*$/);
+      if (
+        closingMarker !== null
+        && closingMarker[1][0] === fence.character
+        && closingMarker[1].length >= fence.length
+      ) {
+        fence = null;
+      }
+      return '';
+    })
+    .join('\n');
+}
+
 export function parsePlan(markdown) {
+  const structuralMarkdown = withoutFencedCode(markdown);
   const title = requiredMatch(
-    markdown,
+    structuralMarkdown,
     /^# (.+) Implementation Plan$/m,
     'implementation-plan title',
   )[1].trim();
   const spec = requiredMatch(
-    markdown,
+    structuralMarkdown,
     /^\*\*Spec:\*\* `([^`]+)`$/m,
     'Spec header',
   )[1];
   const source = requiredMatch(
-    markdown,
+    structuralMarkdown,
     /^\*\*Source:\*\* (.+)$/m,
     'Source header',
   )[1].trim();
-  const tasks = [...markdown.matchAll(/^### Task (\d+): (.+)$/gm)].map(
+  const tasks = [...structuralMarkdown.matchAll(/^### Task (\d+): (.+)$/gm)].map(
     (match) => ({
       number: Number(match[1]),
       title: match[2].trim(),
@@ -114,7 +140,18 @@ function createArgs(project, title, body, key, metadata, parent = null) {
     key,
     ...metadataArgs(metadata),
   ];
-  if (parent !== null) args.push('--parent', parent);
+  if (parent === null) {
+    args.push('--label', 'sjujperpowers-plan');
+  } else {
+    args.push(
+      '--label',
+      'sjujperpowers-task',
+      '--parent',
+      parent,
+      '--blocks',
+      parent,
+    );
+  }
   return args;
 }
 

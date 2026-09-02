@@ -187,7 +187,7 @@ The spec remains authoritative for behavioral and architectural requirements. Ex
 
 ### Writing plans
 
-Plans define one generic `**Source:**` value copied from the approved spec: a provider-qualified Plane outcome, a file-roadmap milestone, or `none (bootstrap)`. Roadmap and execution selection remain independent, so both Plane-backed and file-backed plans may materialize into Kata. Plans also define stable task numbers. When Kata is selected, plan completion materializes one Kata parent for the activation and one child per plan task. Each child records the plan path, source, and task heading as its requirements source.
+Plans define one generic `**Source:**` value copied from the approved spec: a provider-qualified Plane outcome, a file-roadmap milestone, or `none (bootstrap)`. Roadmap and execution selection remain independent, so both Plane-backed and file-backed plans may materialize into Kata. Plans also define stable task numbers. When Kata is selected, plan completion materializes one `sjujperpowers-plan` parent for the activation and one `sjujperpowers-task` child per plan task. Every child has a containment parent link and blocks the parent, which keeps automatic task selection off the root and makes the root ready only after all children close. Each child records the plan path, source, and task heading as its requirements source.
 
 The plan remains an immutable execution argument. Checkbox rendering may remain for readability, but checked state is not authoritative when Kata is configured.
 
@@ -196,7 +196,7 @@ The plan remains an immutable execution argument. Checkbox rendering may remain 
 With Kata selected, the workflow:
 
 1. resolves the configured Kata project;
-2. validates or selects one ready issue;
+2. for a named plan, recovers children by task label plus exact plan metadata, reconciles the recovery ledger, and validates the lowest-numbered incomplete child; only unnamed work uses `kata next --label sjujperpowers-task`, and neither path selects the plan root;
 3. claims the issue;
 4. performs the existing fresh-change isolation logic;
 5. places the Kata reference in the Jujutsu description;
@@ -226,7 +226,7 @@ The completion sequence is:
 4. present the existing land, pull-request, or keep-as-is choice;
 5. execute the chosen action;
 6. close Kata implementation issues only after successful local landing, or after the explicitly configured pull-request milestone;
-7. close the Kata parent only when all local acceptance criteria are satisfied;
+7. close the Kata parent only when all child blockers are closed and all local acceptance criteria are satisfied;
 8. render one curated roadmap roll-up;
 9. leave the external outcome open unless its human-level acceptance criteria are satisfied.
 
@@ -275,14 +275,15 @@ Tests cover behavior rather than skill prose alone:
 2. Existing file/session workflow fixtures remain unchanged when configuration is absent.
 3. Plane mode requires and propagates an external outcome reference without writing a local roadmap.
 4. Kata materialization is idempotent, maps one plan task to one child issue, and works with both Plane outcomes and file-roadmap milestones.
-5. Kata preflight rejects a missing executable, unreachable daemon, and unknown project before versioned artifact mutation.
-6. Claim happens before fresh-change mutation, and claim failure produces no Jujutsu change.
-7. Harness todos and SDD artifact creation still occur with Kata enabled.
-8. Resume reconciles Kata lifecycle with task-local recovery state.
-9. Verification does not close an issue.
-10. `keep-as-is`, failed land, and failed publication leave issues open.
-11. Successful configured completion closes only the applicable local issues and renders, but does not automatically apply, the external roll-up.
-12. An end-to-end reference pilot exercises project binding, preflight, ready selection, claim, Jujutsu association, evidence, landing, close, and TUI visibility.
+5. Child labels and child-to-parent blockers prevent automatic selection of the plan root and keep it unready until every child closes.
+6. Kata preflight rejects a missing executable, unreachable daemon, and unknown project before versioned artifact mutation.
+7. Claim happens before fresh-change mutation, and claim failure produces no Jujutsu change.
+8. Harness todos and SDD artifact creation still occur with Kata enabled.
+9. Resume reconciles Kata lifecycle with task-local recovery state.
+10. Verification does not close an issue.
+11. `keep-as-is`, failed land, and failed publication leave issues open.
+12. Successful configured completion closes only the applicable local issues and renders, but does not automatically apply, the external roll-up.
+13. An end-to-end reference pilot exercises project binding, preflight, task-only ready selection, claim, Jujutsu association, evidence, landing, root unblocking, close, and TUI visibility.
 
 ## Recorded decisions
 

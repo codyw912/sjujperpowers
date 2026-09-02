@@ -16,26 +16,35 @@ Load plan, review critically, execute all tasks, report when complete.
 ## The Process
 
 ### Step 1: Load and Review Plan
-1. Start on a fresh change: use sjujperpowers:starting-a-change (reuses an empty `@`, stacks on described work, steps beside loose WIP)
-2. Read plan file
-3. Review critically - identify any questions or concerns about the plan
-4. If concerns: Raise them with your human partner before starting
-5. If no concerns: Create todos for the plan items and proceed
+
+1. Read the plan file and approved spec before repository mutation.
+2. Use sjujperpowers:tracking-providers and retain the normalized provider selection plus materialized Kata parent/child refs.
+3. With Kata, select the lowest-numbered open child in this plan's retained mapping. Start on a fresh change with sjujperpowers:starting-a-change and supply that exact ref; never use project-wide ready ordering for a named plan. Without Kata, start on a fresh change normally.
+4. Review critically; identify any questions or concerns.
+5. If concerns: raise them with your human partner before starting. For a claimed Kata child, add a substantive comment describing the blocker.
+6. If no concerns: create harness-native todos for every plan task and proceed. Todos remain mandatory under every execution provider.
 
 ### Step 2: Execute Tasks
 
 For each task:
-1. Mark as in_progress
-2. Follow each step exactly (plan has bite-sized steps)
-3. Run verifications as specified
-4. Mark as completed
+
+1. Mark its harness todo `in_progress`.
+2. With Kata, use the materialized child matching the plan task number. The first child was claimed by starting-a-change. Before any code mutation for each later child, repeat the checked preflight, run `kata --project <project> --json claim <ref>` without `--force`, describe the fresh Jujutsu change with `Kata: <project>#<short_id>`, and comment with the stable Jujutsu change ID. Claim conflict stops that task.
+3. Follow every plan step and commit boundary exactly.
+4. Run the task's verification.
+5. With Kata, add a substantive comment naming the verified scope, exact test command, result, and Jujutsu change ID. Do not close: landing/publication has not happened.
+6. Mark the harness todo completed and continue to the next task on the fresh `@` created by `jj commit`.
+
+If a task blocks, keep its todo actionable, add the Kata `blocked` label with a substantive comment, and stop. On deliberate resume, reconcile the issue and todo first and remove `blocked` only after the blocker is resolved.
 
 ### Step 3: Complete Development
 
-After all tasks complete and verified:
+After all tasks are implemented and verified:
+
+- Keep the Kata parent and children open.
 - Announce: "I'm using the finishing-a-change-stack skill to complete this work."
-- **REQUIRED SUB-SKILL:** Use sjujperpowers:finishing-a-change-stack
-- Follow that skill to verify tests, present options, execute choice
+- **REQUIRED SUB-SKILL:** Use sjujperpowers:finishing-a-change-stack.
+- Hand it the plan path and retained Kata refs, then follow that skill to verify, shape, present options, execute the choice, and close only after the configured completion event.
 
 ## When to Stop and Ask for Help
 

@@ -1,6 +1,6 @@
 # sjujperpowers
 
-A personal fork of [obra/superpowers](https://github.com/obra/superpowers) that (1) is Jujutsu-native — skills speak `jj` only, work happens on fresh changes on `trunk()`, change IDs are the unit of record, landing is a bookmark move or `jj git push`; (2) adds a roadmap layer — `docs/sjujperpowers/roadmap.md` with milestones that specs and plans reference (`sjujperpowers:roadmapping`); (3) supports only Claude Code, Oh My Pi, Pi, Codex, and OpenCode; (4) drops the browser-based visual brainstorming companion.
+A personal fork of [obra/superpowers](https://github.com/obra/superpowers) that (1) is Jujutsu-native — skills speak `jj` only, work happens on fresh changes on `trunk()`, change IDs are the unit of record, landing is a bookmark move or `jj git push`; (2) supports independent roadmap and execution providers while preserving the existing file-roadmap/session defaults; (3) supports only Claude Code, Oh My Pi, Pi, Codex, and OpenCode; (4) drops the browser-based visual brainstorming companion.
 
 ## How it works
 
@@ -73,20 +73,76 @@ Oh My Pi loads `skill://<name>` from SKILL.md natively, so no bootstrap hook is 
 
 ## The workflow
 
-1. **roadmapping** (`sjujperpowers:roadmapping`) — Capture long-term milestones in `docs/sjujperpowers/roadmap.md`. Specs and plans name the milestone they serve.
-2. **brainstorming** (`sjujperpowers:brainstorming`) — Refine the idea into a spec.
-3. **writing-plans** (`sjujperpowers:writing-plans`) — Break the spec into bite-sized tasks.
-4. **starting-a-change** (`sjujperpowers:starting-a-change`) — Isolate work on a fresh change on `trunk()`.
-5. **executing-plans** (`sjujperpowers:executing-plans`) or **subagent-driven-development** (`sjujperpowers:subagent-driven-development`) — Execute inline in batches, or dispatch a fresh subagent per task with two-stage review.
-6. **finishing-a-change-stack** (`sjujperpowers:finishing-a-change-stack`) — Land the stack.
+1. **tracking-providers** (`sjujperpowers:tracking-providers`) — Resolve repository-local provider policy and preflight selected execution services.
+2. **roadmapping** (`sjujperpowers:roadmapping`) — Capture an outcome in a file roadmap, reference an external Plane work item, or skip durable roadmap state.
+3. **brainstorming** (`sjujperpowers:brainstorming`) — Refine the outcome into a versioned spec.
+4. **writing-plans** (`sjujperpowers:writing-plans`) — Break the spec into numbered tasks. A Kata-backed plan materializes a non-executable plan root plus one executable child per task.
+5. **starting-a-change** (`sjujperpowers:starting-a-change`) — Claim a configured Kata child, when applicable, then isolate work on a fresh change on `trunk()`.
+6. **executing-plans** (`sjujperpowers:executing-plans`) or **subagent-driven-development** (`sjujperpowers:subagent-driven-development`) — Execute inline in batches, or dispatch a fresh subagent per task with two-stage review.
+7. **finishing-a-change-stack** (`sjujperpowers:finishing-a-change-stack`) — Land the stack, then finalize local execution state at the configured completion milestone.
 
 Always-on: **test-driven-development**, **systematic-debugging**, **verification-before-completion**, **requesting-code-review**, **receiving-code-review**.
 
 The agent checks for relevant skills before any task.
 
+## Tracking providers
+
+Provider policy lives in `.sjujperpowers/config.json`. The end-to-end ownership flow is:
+
+```text
+Plane outcome -> versioned spec -> versioned plan -> Kata issues
+-> Jujutsu changes/evidence -> curated Plane roll-up
+```
+
+The roadmap and execution slots are independent: `file + kata` and `plane + session` are valid. Without configuration, the explicit equivalent is:
+
+```json
+{
+  "version": 1,
+  "roadmap": { "provider": "file" },
+  "execution": { "provider": "session" }
+}
+```
+
+A Plane roadmap with Kata execution:
+
+```json
+{
+  "version": 1,
+  "roadmap": {
+    "provider": "plane",
+    "project": "Example Product"
+  },
+  "execution": {
+    "provider": "kata",
+    "project": "example-product",
+    "completion": "landed"
+  }
+}
+```
+
+A repository with both durable provider slots disabled:
+
+```json
+{
+  "version": 1,
+  "roadmap": { "provider": "none" },
+  "execution": { "provider": "none" }
+}
+```
+
+Supported roadmap providers are `file`, `plane`, and `none`; execution providers are `session`, `kata`, and `none`. Kata is optional. When selected, its executable, daemon, and project must pass preflight before any issue or repository mutation.
+
+Use one Plane workspace as the portfolio boundary and projects as product or repository ownership boundaries. On Community Edition, use modules for focused initiatives and linked work items in each participating project for cross-project efforts. Plane owns outcomes and priorities; Sjujperpowers only renders curated roll-ups, never silent remote mutations.
+
+Use one Kata project per repository. Kata owns activated implementation tasks and evidence. A terminal multiplexer or workspace manager only groups user-interface sessions; a Jujutsu workspace is a separate working copy for a concurrent code change. They are not interchangeable.
+
+Kata-backed plans label roots and executable children separately, and children block root completion. See the [provider design](docs/sjujperpowers/specs/2026-09-02-pluggable-tracking-providers-design.md) and [`tracking-providers` skill](skills/tracking-providers/SKILL.md) for the lifecycle and failure contracts.
+
 ## What's inside
 
 - **using-sjujperpowers** — Bootstrap that makes the other skills fire
+- **tracking-providers** — Repository-local roadmap and execution provider policy
 - **roadmapping** — Long-term milestones that specs and plans reference
 - **brainstorming** — Socratic design refinement
 - **writing-plans** — Detailed implementation plans

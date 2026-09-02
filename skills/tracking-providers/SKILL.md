@@ -115,9 +115,20 @@ node <tracking-providers skill dir>/scripts/materialize-plan.mjs \
   --plan docs/sjujperpowers/plans/YYYY-MM-DD-feature.md
 ```
 
-The command repeats checked provider resolution before mutation, creates one containment parent plus one child per numbered plan task, and prints normalized refs. Stable idempotency keys derive from the Kata project and repository-relative plan path, so retry the same command after a partial failure; do not create replacement issues manually.
+The command repeats checked provider resolution before mutation, creates one containment parent plus one child per numbered plan task, and prints normalized refs. The parent is labeled `sjujperpowers-plan`; children are labeled `sjujperpowers-task`. Every child also blocks the parent, so the parent cannot become ready before all children close. Automatic selection MUST use `kata next --label sjujperpowers-task --json` and can never claim a plan root.
 
-The parent and children record `sjujperpowers.plan`, `sjujperpowers.spec`, and `sjujperpowers.source` metadata. Children additionally record `sjujperpowers.task`. The source is provider-neutral, so `file + kata`, `plane + kata`, and bootstrap sources materialize identically.
+Stable idempotency keys derive from the Kata project and repository-relative plan path, so retry the same command after a partial failure; do not create replacement issues manually. The parent and children record `sjujperpowers.plan`, `sjujperpowers.spec`, and `sjujperpowers.source` metadata. Children additionally record `sjujperpowers.task`. The source is provider-neutral, so `file + kata`, `plane + kata`, and bootstrap sources materialize identically.
+
+Recover a named plan's mapping in a fresh session with:
+
+```bash
+kata --project <project> --json list \
+  --status open \
+  --label sjujperpowers-task \
+  --meta "sjujperpowers.plan=<repository-relative-plan-path>"
+```
+
+Sort the returned issues numerically by `metadata["sjujperpowers.task"]`. Reconcile that list with the execution or SDD recovery ledger and supply the lowest-numbered child not marked complete to starting-a-change. Open completed children intentionally remain open until the configured landing or publication milestone, so open-state alone cannot identify the next task. Project-wide `kata next` is only for work without a named plan.
 
 ## Plane edition compatibility
 

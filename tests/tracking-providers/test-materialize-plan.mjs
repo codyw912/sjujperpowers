@@ -56,6 +56,20 @@ test('parsePlan extracts a provider-neutral source and stable tasks', () => {
   });
 });
 
+test('parsePlan ignores task-shaped headings inside fenced code', () => {
+  const withFence = plan.replace(
+    'Details.\n\n### Task 2',
+    'Details.\n\n```markdown\n### Task 99: Example only\n```\n\n### Task 2',
+  );
+  assert.deepEqual(
+    parsePlan(withFence).tasks,
+    [
+      { number: 1, title: 'Resolver' },
+      { number: 2, title: 'Skill integration' },
+    ],
+  );
+});
+
 test('materialization creates one parent and one child per task', async () => {
   const calls = [];
   const result = await materializePlan({
@@ -74,8 +88,10 @@ test('materialization creates one parent and one child per task', async () => {
     'create',
   ]);
   assert.match(calls[0].join(' '), /sjujperpowers\.source=plane:SJUP-12/);
-  assert.ok(calls[1].includes('--parent'));
+  assert.equal(calls[0][calls[0].indexOf('--label') + 1], 'sjujperpowers-plan');
+  assert.equal(calls[1][calls[1].indexOf('--label') + 1], 'sjujperpowers-task');
   assert.equal(calls[1][calls[1].indexOf('--parent') + 1], 'root');
+  assert.equal(calls[1][calls[1].indexOf('--blocks') + 1], 'root');
   assert.deepEqual(result, {
     parent: { ref: 'sjujperpowers#root', created: true },
     children: [
