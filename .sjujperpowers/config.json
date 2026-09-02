@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "roadmap": {
+    "provider": "plane",
+    "project": "Sjujperpowers"
+  },
+  "execution": {
+    "provider": "kata",
+    "project": "sjujperpowers",
+    "completion": "landed"
+  }
+}
