@@ -132,23 +132,25 @@ expect bad $s "$fx"
 
 
 # --- tracking-providers-plane: provider-qualified source propagation
-s=tracking-providers-plane
-fx=$(fixture $s)
-(cd "$fx" && mkdir -p docs/sjujperpowers/specs docs/sjujperpowers/plans && cat > docs/sjujperpowers/specs/2026-09-02-health-report-design.md <<'EOF'
+plane_provider_outcome() {
+  local source=$1
+  mkdir -p docs/sjujperpowers/specs docs/sjujperpowers/plans
+  cat > docs/sjujperpowers/specs/2026-09-02-health-report-design.md <<'EOF'
 # Health Report Design
 
 **Outcome:** plane:DEMO-12
 EOF
-cat > docs/sjujperpowers/plans/2026-09-02-health-report.md <<'EOF'
+  cat > docs/sjujperpowers/plans/2026-09-02-health-report.md <<EOF
 # Health Report Implementation Plan
 
-**Spec:** `docs/sjujperpowers/specs/2026-09-02-health-report-design.md`
+**Spec:** \`docs/sjujperpowers/specs/2026-09-02-health-report-design.md\`
 
-**Source:** plane:DEMO-12
+**Source:** $source
 EOF
-)
-expect good $s "$fx"
-fx=$(fixture $s); expect bad $s "$fx"
+}
+s=tracking-providers-plane
+fx=$(fixture $s); (cd "$fx" && plane_provider_outcome 'plane:DEMO-12'); expect good $s "$fx"
+fx=$(fixture $s); (cd "$fx" && plane_provider_outcome 'DEMO-12'); expect bad $s "$fx"
 
 # --- tracking-providers-kata: keep-as-is preserves open execution state
 kata_cmd() { PATH="$PWD/.test-bin:$PATH" kata --project sjujperpowers "$@"; }
@@ -166,7 +168,9 @@ Kata: sjujperpowers#task1" >/dev/null 2>&1
 }
 s=tracking-providers-kata
 fx=$(fixture $s); (cd "$fx" && kata_keep_good); expect good $s "$fx"
-fx=$(fixture $s); expect bad $s "$fx"
+fx=$(fixture $s)
+(cd "$fx" && kata_keep_good && kata_cmd close sjujperpowers#task1 --json >/dev/null)
+expect bad $s "$fx"
 
 # --- tracking-providers-kata-landed: child then root close after landing
 kata_land_good() {
