@@ -1,6 +1,6 @@
-# Superpowers
+# Sjujperpowers
 
-Superpowers is a complete software development methodology for your coding agents, built on top of a set of composable skills and some initial instructions that make sure your agent uses them.
+Sjujperpowers is a complete software development methodology for your coding agents, built on top of a set of composable skills and some initial instructions that make sure your agent uses them.
 
 ## Table of Contents
 
@@ -40,66 +40,66 @@ After you've signed off on the design, your agent puts together an implementatio
 
 Next up, once you say "go", it launches a *subagent-driven-development* process, having agents work through each engineering task, inspecting and reviewing their work, and continuing forward. It's not uncommon for your agent to work autonomously for a couple hours at a time without deviating from the plan you put together.
 
-There's a bunch more to it, but that's the core of the system. And because the skills trigger automatically, you don't need to do anything special. Your coding agent just has Superpowers.
+There's a bunch more to it, but that's the core of the system. And because the skills trigger automatically, you don't need to do anything special. Your coding agent just has Sjujperpowers.
 
 ## Commercial Services
 
-If you're using Superpowers in enterprise and could benefit from commercial support, additional tooling, or managed spending, please don't hesitate to drop us a line at sales@primeradiant.com.
+If you're using Sjujperpowers in enterprise and could benefit from commercial support, additional tooling, or managed spending, please don't hesitate to drop us a line at sales@primeradiant.com.
 
 ## Installation
 
-Installation differs by harness. If you use more than one, install Superpowers separately for each one.
+Installation differs by harness. If you use more than one, install Sjujperpowers separately for each one.
 
 ### Claude Code
 
-Superpowers is available via the [official Claude plugin marketplace](https://claude.com/plugins/superpowers)
+Sjujperpowers is available via the [official Claude plugin marketplace](https://claude.com/plugins/sjujperpowers)
 
 #### Official Marketplace
 
 - Install the plugin from Anthropic's official marketplace:
 
   ```bash
-  /plugin install superpowers@claude-plugins-official
+  /plugin install sjujperpowers@claude-plugins-official
   ```
 
-#### Superpowers Marketplace
+#### Sjujperpowers Marketplace
 
-The Superpowers marketplace provides Superpowers and some other related plugins for Claude Code.
+The Sjujperpowers marketplace provides Sjujperpowers and some other related plugins for Claude Code.
 
 - Register the marketplace:
 
   ```bash
-  /plugin marketplace add obra/superpowers-marketplace
+  /plugin marketplace add codyw912/sjujperpowers-marketplace
   ```
 
 - Install the plugin from this marketplace:
 
   ```bash
-  /plugin install superpowers@superpowers-marketplace
+  /plugin install sjujperpowers@sjujperpowers-marketplace
   ```
 
 ### Antigravity
 
-Install Superpowers as a plugin from this repository:
+Install Sjujperpowers as a plugin from this repository:
 
 ```bash
-agy plugin install https://github.com/obra/superpowers
+agy plugin install https://github.com/codyw912/sjujperpowers
 ```
 
-Antigravity runs the plugin's session-start hook, so Superpowers is active from
+Antigravity runs the plugin's session-start hook, so Sjujperpowers is active from
 the first message. Reinstall with the same command to update.
 
 ### Codex App
 
-Superpowers is available via the [official Codex plugin marketplace](https://github.com/openai/plugins).
+Sjujperpowers is available via the [official Codex plugin marketplace](https://github.com/openai/plugins).
 
 - In the Codex app, click on Plugins in the sidebar.
-- You should see `Superpowers` in the Coding section.
-- Click the `+` next to Superpowers and follow the prompts.
+- You should see `Sjujperpowers` in the Coding section.
+- Click the `+` next to Sjujperpowers and follow the prompts.
 
 ### Codex CLI
 
-Superpowers is available via the [official Codex plugin marketplace](https://github.com/openai/plugins).
+Sjujperpowers is available via the [official Codex plugin marketplace](https://github.com/openai/plugins).
 
 - Open the plugin search interface:
 
@@ -107,10 +107,10 @@ Superpowers is available via the [official Codex plugin marketplace](https://git
   /plugins
   ```
 
-- Search for Superpowers:
+- Search for Sjujperpowers:
 
   ```bash
-  superpowers
+  sjujperpowers
   ```
 
 - Select `Install Plugin`.
@@ -120,23 +120,23 @@ Superpowers is available via the [official Codex plugin marketplace](https://git
 - In Cursor Agent chat, install from marketplace:
 
   ```text
-  /add-plugin superpowers
+  /add-plugin sjujperpowers
   ```
 
-- Or search for "superpowers" in the plugin marketplace.
+- Or search for "sjujperpowers" in the plugin marketplace.
 
 ### Devin CLI
 
 - Install the plugin from this repository:
 
   ```bash
-  devin plugins install obra/superpowers
+  devin plugins install codyw912/sjujperpowers
   ```
 
 - Update to the latest version with:
 
   ```bash
-  devin plugins update superpowers
+  devin plugins update sjujperpowers
   ```
 
 ### Factory Droid
@@ -144,13 +144,13 @@ Superpowers is available via the [official Codex plugin marketplace](https://git
 - Register the marketplace:
 
   ```bash
-  droid plugin marketplace add https://github.com/obra/superpowers
+  droid plugin marketplace add https://github.com/codyw912/sjujperpowers
   ```
 
 - Install the plugin:
 
   ```bash
-  droid plugin install superpowers@superpowers
+  droid plugin install sjujperpowers@sjujperpowers
   ```
 
 ### Gemini CLI
@@ -158,13 +158,13 @@ Superpowers is available via the [official Codex plugin marketplace](https://git
 - Install the extension:
 
   ```bash
-  gemini extensions install https://github.com/obra/superpowers
+  gemini extensions install https://github.com/codyw912/sjujperpowers
   ```
 
 - Update later:
 
   ```bash
-  gemini extensions update superpowers
+  gemini extensions update sjujperpowers
   ```
 
 ### GitHub Copilot CLI
@@ -172,26 +172,26 @@ Superpowers is available via the [official Codex plugin marketplace](https://git
 - Register the marketplace:
 
   ```bash
-  copilot plugin marketplace add obra/superpowers-marketplace
+  copilot plugin marketplace add codyw912/sjujperpowers-marketplace
   ```
 
 - Install the plugin:
 
   ```bash
-  copilot plugin install superpowers@superpowers-marketplace
+  copilot plugin install sjujperpowers@sjujperpowers-marketplace
   ```
 
 ### Grok Build CLI
 
-Superpowers is available via the [official Grok plugin marketplace](https://github.com/xai-org/plugin-marketplace).
+Sjujperpowers is available via the [official Grok plugin marketplace](https://github.com/xai-org/plugin-marketplace).
 
 - Install the plugin from xAI's official marketplace:
 
   ```bash
-  grok plugin install superpowers@xai-official --trust
+  grok plugin install sjujperpowers@xai-official --trust
   ```
 
-- Or open the marketplace in the TUI, search for Superpowers, and install it:
+- Or open the marketplace in the TUI, search for Sjujperpowers, and install it:
 
   ```text
   /marketplace
@@ -199,7 +199,7 @@ Superpowers is available via the [official Grok plugin marketplace](https://gith
 
 ### Kimi Code
 
-Superpowers is available in Kimi Code's plugin marketplace.
+Sjujperpowers is available in Kimi Code's plugin marketplace.
 
 - Open Kimi Code's plugin manager:
 
@@ -207,51 +207,51 @@ Superpowers is available in Kimi Code's plugin marketplace.
   /plugins
   ```
 
-- Go to `Marketplace` > `Superpowers` and install it.
+- Go to `Marketplace` > `Sjujperpowers` and install it.
 
 - Or install directly from this repository:
 
   ```text
-  /plugins install https://github.com/obra/superpowers
+  /plugins install https://github.com/codyw912/sjujperpowers
   ```
 
 - Detailed docs: [docs/README.kimi.md](docs/README.kimi.md)
 
 ### OpenCode
 
-OpenCode uses its own plugin install; install Superpowers separately even if you
+OpenCode uses its own plugin install; install Sjujperpowers separately even if you
 already use it in another harness.
 
 - Tell OpenCode:
 
   ```
-  Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.opencode/INSTALL.md
+  Fetch and follow instructions from https://raw.githubusercontent.com/codyw912/sjujperpowers/refs/heads/main/.opencode/INSTALL.md
   ```
 
 - Detailed docs: [docs/README.opencode.md](docs/README.opencode.md)
 
 ### Pi
 
-Install Superpowers as a Pi package from this repository:
+Install Sjujperpowers as a Pi package from this repository:
 
 ```bash
-pi install git:github.com/obra/superpowers
+pi install git:github.com/codyw912/sjujperpowers
 ```
 
 For local development, run Pi with this checkout loaded as a temporary package:
 
 ```bash
-pi -e /path/to/superpowers
+pi -e /path/to/sjujperpowers
 ```
 
-The Pi package loads the Superpowers skills and a small extension that injects the `using-superpowers` bootstrap at session startup and again after compaction. Pi has native skills, so no compatibility `Skill` tool is required. Subagent and task-list tools remain optional Pi companion packages.
+The Pi package loads the Sjujperpowers skills and a small extension that injects the `using-sjujperpowers` bootstrap at session startup and again after compaction. Pi has native skills, so no compatibility `Skill` tool is required. Subagent and task-list tools remain optional Pi companion packages.
 
 ### Hermes Agent
 
-Install Superpowers as a Hermes plugin from this repository:
+Install Sjujperpowers as a Hermes plugin from this repository:
 
 ```bash
-hermes plugins install obra/superpowers --enable
+hermes plugins install codyw912/sjujperpowers --enable
 ```
 
 Restart any active Hermes sessions after installing. Note: Hermes has no
@@ -262,7 +262,7 @@ turn loses the bootstrap — start a fresh session if skills stop triggering.
 
 1. **brainstorming** - Activates before writing code. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Saves design document.
 
-2. **using-git-worktrees** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, verifies clean test baseline.
+2. **starting-a-change** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, verifies clean test baseline.
 
 3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
 
@@ -272,17 +272,17 @@ turn loses the bootstrap — start a fresh session if skills stop triggering.
 
 6. **requesting-code-review** - Activates between tasks. Reviews against plan, reports issues by severity. Critical issues block progress.
 
-7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
+7. **finishing-a-change-stack** - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
 
 **The agent checks for relevant skills before any task.** Mandatory workflows, not suggestions.
 
 ## Community
 
-Superpowers is built by [Jesse Vincent](https://blog.fsck.com) and the rest of the folks at [Prime Radiant](https://primeradiant.com).
+Sjujperpowers is built by [Jesse Vincent](https://blog.fsck.com) and the rest of the folks at [Prime Radiant](https://primeradiant.com).
 
-- **Discord**: [Join us](https://discord.gg/35wsABTejz) for community support, questions, and sharing what you're building with Superpowers
-- **Issues**: https://github.com/obra/superpowers/issues
-- **Release announcements**: [Sign up](https://primeradiant.com/superpowers/) to get notified about new versions
+- **Discord**: [Join us](https://discord.gg/35wsABTejz) for community support, questions, and sharing what you're building with Sjujperpowers
+- **Issues**: https://github.com/codyw912/sjujperpowers/issues
+- **Release announcements**: [Sign up](https://primeradiant.com/sjujperpowers/) to get notified about new versions
 
 ## What's Inside
 
@@ -302,13 +302,13 @@ Superpowers is built by [Jesse Vincent](https://blog.fsck.com) and the rest of t
 - **dispatching-parallel-agents** - Concurrent subagent workflows
 - **requesting-code-review** - Pre-review checklist
 - **receiving-code-review** - Responding to feedback
-- **using-git-worktrees** - Parallel development branches
-- **finishing-a-development-branch** - Merge/PR decision workflow
+- **starting-a-change** - Parallel development branches
+- **finishing-a-change-stack** - Merge/PR decision workflow
 - **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
 
 **Meta**
 - **writing-skills** - Create new skills following best practices (includes testing methodology)
-- **using-superpowers** - Introduction to the skills system
+- **using-sjujperpowers** - Introduction to the skills system
 
 ## Philosophy
 
@@ -317,11 +317,11 @@ Superpowers is built by [Jesse Vincent](https://blog.fsck.com) and the rest of t
 - **Complexity reduction** - Simplicity as primary goal
 - **Evidence over claims** - Verify before declaring success
 
-Read [the original release announcement](https://blog.fsck.com/2025/10/09/superpowers/).
+Read [the original release announcement](https://blog.fsck.com/2025/10/09/sjujperpowers/).
 
 ## Contributing
 
-The general contribution process for Superpowers is below. Keep in mind that we don't generally accept contributions of new skills and that any updates to skills must work across all of the coding agents we support.
+The general contribution process for Sjujperpowers is below. Keep in mind that we don't generally accept contributions of new skills and that any updates to skills must work across all of the coding agents we support.
 
 1. Fork the repository
 2. Switch to the 'dev' branch
@@ -329,13 +329,13 @@ The general contribution process for Superpowers is below. Keep in mind that we 
 4. Follow the `writing-skills` skill for creating and testing new and modified skills
 5. Submit a PR, being sure to fill in the pull request template.
 
-Skill-behavior tests use the drill eval harness from [superpowers-evals](https://github.com/prime-radiant-inc/superpowers-evals/), cloned into `evals/` — see `evals/README.md` for setup. Plugin-infrastructure tests live at `tests/` and run via the relevant `run-*.sh` or `npm test`.
+Skill-behavior tests use the drill eval harness from [sjujperpowers-evals](https://github.com/prime-radiant-inc/sjujperpowers-evals/), cloned into `evals/` — see `evals/README.md` for setup. Plugin-infrastructure tests live at `tests/` and run via the relevant `run-*.sh` or `npm test`.
 
 See `skills/writing-skills/SKILL.md` for the complete guide.
 
 ## Updating
 
-Superpowers updates are somewhat coding-agent dependent, but are often automatic.
+Sjujperpowers updates are somewhat coding-agent dependent, but are often automatic.
 
 ## License
 
@@ -343,4 +343,4 @@ MIT License - see LICENSE file for details
 
 ## Visual companion telemetry
 
-Because skills and plugins don't provide any feedback to creators, we have no idea how many of you are using Superpowers. By default, the Prime Radiant logo on brainstorming's optional visual companion feature is loaded from our website. It includes the version of Superpowers in use. It does not include any details about your project, prompt, or coding agent. We don't see your clicks or anything about what you're building. This helps us have a rough idea of how many folks are using Superpowers and which version of Superpowers they're using. It's 100% optional. To disable this, set the environment variable `SUPERPOWERS_DISABLE_TELEMETRY` to any true value. Superpowers also honors Claude Code's `DISABLE_TELEMETRY` and `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` opt-outs.
+Because skills and plugins don't provide any feedback to creators, we have no idea how many of you are using Sjujperpowers. By default, the Prime Radiant logo on brainstorming's optional visual companion feature is loaded from our website. It includes the version of Sjujperpowers in use. It does not include any details about your project, prompt, or coding agent. We don't see your clicks or anything about what you're building. This helps us have a rough idea of how many folks are using Sjujperpowers and which version of Sjujperpowers they're using. It's 100% optional. To disable this, set the environment variable `SJUJPERPOWERS_DISABLE_TELEMETRY` to any true value. Sjujperpowers also honors Claude Code's `DISABLE_TELEMETRY` and `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` opt-outs.

@@ -1,6 +1,6 @@
 # Claude Code Skills Tests
 
-Automated tests for superpowers skills using Claude Code CLI.
+Automated tests for sjujperpowers skills using Claude Code CLI.
 
 ## Overview
 
@@ -9,7 +9,7 @@ This test suite verifies that skills are loaded correctly and Claude follows the
 ## Requirements
 
 - Claude Code CLI installed and in PATH (`claude --version` should work)
-- Local superpowers plugin installed (see main README for installation)
+- Local sjujperpowers plugin installed (see main README for installation)
 
 ## Running Tests
 
@@ -116,7 +116,7 @@ Full workflow execution test (~10-30 minutes):
 - Final code is functional and tested
 
 #### test-worktree-native-preference.sh
-RED-GREEN-REFACTOR validation for the using-git-worktrees skill (~5 minutes):
+RED-GREEN-REFACTOR validation for the starting-a-change skill (~5 minutes):
 - RED: skill without Step 1a — agent should use `git worktree add`
 - GREEN: skill with Step 1a — agent should use the native EnterWorktree tool
 - PRESSURE: same as GREEN under urgency framing with pre-existing `.worktrees/`

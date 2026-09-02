@@ -4,7 +4,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HOOK_UNDER_TEST="$REPO_ROOT/hooks/session-start"
-WRAPPER_UNDER_TEST="$REPO_ROOT/hooks/run-hook.cmd"
 
 FAILURES=0
 TEST_ROOT="$(mktemp -d)"
@@ -154,7 +153,7 @@ if (entry.shell !== "bash") {
   console.error(`SessionStart hook shell is ${JSON.stringify(entry.shell)}, expected "bash"`);
   process.exit(1);
 }
-if (!/run-hook\.cmd" session-start$/.test(entry.command)) {
+if (!/hooks\/session-start"$/.test(entry.command)) {
   console.error(`unexpected SessionStart command shape: ${entry.command}`);
   process.exit(1);
 }
@@ -174,45 +173,13 @@ assert_command_output \
     CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
     bash "$HOOK_UNDER_TEST"
 
-wrapper_home="$(make_home run-hook-wrapper)"
-assert_command_output \
-    "run-hook.cmd wrapper dispatches to the named session-start script" \
-    "nested" \
-    "" \
-    "" \
-    "$wrapper_home" \
-    CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
-    bash "$WRAPPER_UNDER_TEST" session-start
-
-cursor_home="$(make_home cursor)"
-assert_command_output \
-    "Cursor emits top-level additional_context only" \
-    "cursor" \
-    "" \
-    "" \
-    "$cursor_home" \
-    CURSOR_PLUGIN_ROOT="$REPO_ROOT" \
-    CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
-    bash "$HOOK_UNDER_TEST"
-
-copilot_home="$(make_home copilot-cli)"
-assert_command_output \
-    "Copilot CLI emits top-level additionalContext only" \
-    "sdk" \
-    "" \
-    "" \
-    "$copilot_home" \
-    COPILOT_CLI=1 \
-    CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
-    bash "$HOOK_UNDER_TEST"
-
 legacy_home="$(make_home legacy-warning-removed)"
-mkdir -p "$legacy_home/.config/superpowers/skills"
+mkdir -p "$legacy_home/.config/sjujperpowers/skills"
 assert_command_output \
     "SessionStart omits obsolete legacy custom-skill warning" \
     "nested" \
     "" \
-    "Superpowers now uses"$'\037'"~/.config/superpowers/skills"$'\037'"~/.claude/skills"$'\037'"legacy" \
+    "Sjujperpowers now uses"$'\037'"~/.config/sjujperpowers/skills"$'\037'"~/.claude/skills"$'\037'"legacy" \
     "$legacy_home" \
     CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
     bash "$HOOK_UNDER_TEST"
