@@ -63,7 +63,7 @@ You MUST complete each phase before proceeding to the next.
 
 3. **Check Recent Changes**
    - What changed that could cause this?
-   - Git diff, recent commits
+   - `jj diff`, `jj log`
    - New dependencies, config changes
    - Environmental differences
 

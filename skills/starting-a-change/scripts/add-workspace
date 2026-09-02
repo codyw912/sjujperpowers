@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Create a separate jj workspace for this work under .workspaces/<name>/.
+#
+# jj auto-tracks every new file, so the directory must be ignored BEFORE the
+# workspace exists — and the ignore entry must be committed, by fileset, so
+# the new workspace's change descends from it and nothing else in @ (loose
+# WIP) is swept in. Then the workspace's working copy starts as a sibling of
+# the current @ on the same parent.
+#
+# Prints: `<path> <change-id>` for the new workspace.
+#
+# Usage: add-workspace NAME
+set -euo pipefail
+
+[ $# -eq 1 ] && [ -n "$1" ] || { echo "usage: add-workspace NAME" >&2; exit 2; }
+name=$1
+case "$name" in */*|.|..) echo "NAME must be a single path component: $name" >&2; exit 2;; esac
+
+root=$(jj root 2>/dev/null) || {
+  echo "This isn't a jj repo. Run \`jj git init --colocate\` and re-run, or tell me to continue without VCS steps." >&2
+  exit 2
+}
+cd "$root"
+
+if [ -n "$(jj workspace list | awk -v n="$name" -F: '$1 == n')" ]; then
+  echo "workspace '$name' already exists" >&2
+  exit 2
+fi
+
+if ! grep -qxE '\.workspaces/?' .gitignore 2>/dev/null; then
+  printf '.workspaces/\n' >> .gitignore
+  jj commit --quiet .gitignore -m "Ignore .workspaces/"
+fi
+
+path="$root/.workspaces/$name"
+mkdir -p "$root/.workspaces"
+jj workspace add --quiet "$path" -r '@-'
+echo "$path $(jj -R "$path" log -r @ --no-graph -T 'change_id.short()')"

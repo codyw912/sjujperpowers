@@ -92,13 +92,13 @@ your path and complete them in order.
 5. **Implement** — proceed with the normal development workflow (TDD applies); no plan document
 
 **Architectural:**
-1. **Explore project context** — check files, docs, recent commits
+1. **Explore project context** — check files, docs, recent commits. If `docs/sjujperpowers/roadmap.md` exists, read it and state which milestone this work serves; if none fits, say so — either Revise the roadmap first or proceed as `Milestone: none (unplanned)` with a Decisions line explaining why. If no roadmap exists AND the request is a new project, invoke roadmapping before continuing.
 2. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 3. **Propose 2-3 approaches** — with trade-offs and your recommendation
 4. **Present design** — in sections scaled to their complexity, get user approval after each section
-5. **Write design doc** — save to `docs/sjujperpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
-6. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
-7. **User reviews written spec** — ask user to review the spec file before proceeding
+5. **Write design doc** — save to `docs/sjujperpowers/specs/YYYY-MM-DD-<topic>-design.md`
+6. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below), then commit the spec by fileset
+7. **User reviews written spec** — ask user to review the spec file before proceeding; re-commit after any revision
 8. **Transition to implementation** — invoke writing-plans skill to create implementation plan
 
 ## Process Flow
@@ -164,7 +164,7 @@ is the whole process.
 
 - Check out the current project state first (files, docs, recent commits)
 - Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
-- If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle.
+- If the project is too large for a single spec, invoke `sjujperpowers:roadmapping` (Create or Revise) so the decomposition persists, then brainstorm the first milestone's spec.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea
 - Prefer multiple choice questions when possible, but open-ended is fine too
 - Only one question per message - if a topic needs more exploration, break it into multiple questions
@@ -204,8 +204,10 @@ is the whole process.
 
 - Write the validated design (spec) to `docs/sjujperpowers/specs/YYYY-MM-DD-<topic>-design.md`
   - (User preferences for spec location override this default)
+  - Header, right under the title: `**Milestone:** M<N> — <title>` (or `**Milestone:** none (unplanned)`)
+- If the spec serves a roadmap milestone, add the spec path under that milestone's `**Specs:**` and set its `**Status:**` to `active` if it was `planned` — same change as the spec
 - Use elements-of-style:writing-clearly-and-concisely skill if available
-- Commit the design document to git
+- Do not commit yet — the self-review below edits the file, and anything left uncommitted in `@` is loose WIP that `starting-a-change` steps beside, stranding the correction
 
 **Spec Self-Review:**
 After writing the spec document, look at it with fresh eyes:
@@ -217,12 +219,20 @@ After writing the spec document, look at it with fresh eyes:
 
 Fix any issues inline. No need to re-review — just fix and move on.
 
+**Commit:** once the self-review is clean, commit by fileset so loose WIP in `@` is never swept in:
+
+```bash
+jj commit docs/sjujperpowers/specs/<file>.md docs/sjujperpowers/roadmap.md -m "Add <topic> design spec"
+```
+
+(omit the roadmap path when it was not edited). The spec is now an ancestor of `@`; every later edit to it must be committed the same way or it will not reach the implementation change.
+
 **User Review Gate:**
-After the spec review loop passes, ask the user to review the written spec before proceeding:
+Ask the user to review the written spec before proceeding:
 
 > "Spec written and committed to `<path>`. Please review it and let me know if you want to make any changes before we start writing out the implementation plan."
 
-Wait for the user's response. If they request changes, make them and re-run the spec review loop. Only proceed once the user approves.
+Wait for the user's response. If they request changes, make them, re-run the spec review loop, and re-commit the fileset (`jj commit docs/sjujperpowers/specs/<file>.md -m "Revise <topic> design spec"`). Only proceed once the user approves.
 
 **Implementation:**
 

@@ -1,10 +1,9 @@
 {
   "name": "sjujperpowers",
-  "description": "Core skills library for Claude Code: TDD, debugging, collaboration patterns, and proven techniques",
-  "version": "6.3.0",
+  "description": "Jujutsu-native fork of obra/superpowers: jj-only skills, a roadmap layer, and support for Claude Code, Oh My Pi, Pi, Codex, and OpenCode",
+  "version": "0.1.0",
   "author": {
-    "name": "Jesse Vincent",
-    "email": "jesse@fsck.com"
+    "name": "Cody White"
   },
   "homepage": "https://github.com/codyw912/sjujperpowers",
   "repository": "https://github.com/codyw912/sjujperpowers",
@@ -15,6 +14,8 @@
     "debugging",
     "collaboration",
     "best-practices",
-    "workflows"
+    "workflows",
+    "jujutsu",
+    "jj"
   ]
 }

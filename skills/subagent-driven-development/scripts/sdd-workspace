@@ -8,11 +8,10 @@
 # artifacts. A stale ledger misread as current progress makes controllers
 # skip whole task sequences — plan-scoping removes that failure structurally.
 #
-# The workspace lives in the working tree (not under .git/) because Claude Code
-# treats .git/ as a protected path and denies agent writes there — which blocks
-# an implementer subagent from writing its report file. A self-ignoring
-# .gitignore at .sjujperpowers/sdd/ keeps every plan's workspace out of
-# `git status` and out of accidental commits without modifying any tracked file.
+# jj auto-tracks every new file. A self-ignoring .gitignore at
+# .sjujperpowers/sdd/ keeps every plan's workspace out of snapshots without
+# modifying any tracked file. jj honors .gitignore, so this scratch never
+# enters a change.
 #
 # Single source of truth for the workspace location, so task-brief and
 # review-package cannot drift to different directories.
@@ -32,7 +31,10 @@ slug=$(basename "$plan" .md)
 [ -n "$slug" ] && [ "$slug" != "." ] && [ "$slug" != ".." ] \
   || { echo "cannot derive a workspace name from: $plan" >&2; exit 2; }
 
-root=$(git rev-parse --show-toplevel)
+if ! root=$(jj root 2>/dev/null); then
+  echo "This isn't a jj repo. Run \`jj git init --colocate\` and re-run, or tell me to continue without VCS steps." >&2
+  exit 2
+fi
 base="$root/.sjujperpowers/sdd"
 dir="$base/$slug"
 mkdir -p "$dir"

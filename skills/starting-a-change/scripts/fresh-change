@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Put new work on a fresh jj change without absorbing anything in flight.
+#
+# The stack (spec, plan, earlier commits) lives in trunk()..@ and must stay
+# in the working copy — never reset to trunk(). What must NOT be absorbed is
+# loose, undescribed work-in-progress sitting in @. Three cases:
+#
+#   @ empty + undescribed   -> reuse it (the normal state after `jj commit`)
+#   @ described             -> `jj new` on top (deliberate work; build on it)
+#   @ non-empty + undescribed -> `jj new @-` (sibling: the WIP stays in its own
+#                              change, untouched, and our work starts beside it)
+#
+# Prints one line: `<change-id> <reused|new-on-top|new-beside-wip> [<wip-change-id>]`.
+#
+# Usage: fresh-change
+set -euo pipefail
+
+if ! jj root >/dev/null 2>&1; then
+  echo "This isn't a jj repo. Run \`jj git init --colocate\` and re-run, or tell me to continue without VCS steps." >&2
+  exit 2
+fi
+
+# jj's trunk() falls back to root() in a local-only repo; trunk-rev resolves a
+# real trunk at runtime (local main/master/trunk). Finishing needs one; say so early.
+if ! "$(dirname "$0")/trunk-rev" >/dev/null 2>&1; then
+  echo "warning: no trunk found (trunk() resolves to root() and no local main/master/trunk bookmark). Before finishing: jj bookmark create main -r <base>" >&2
+fi
+
+state=$(jj log -r @ --no-graph -T 'if(empty, "empty", "nonempty") ++ " " ++ if(description, "described", "undescribed") ++ " " ++ change_id.short()')
+read -r fill desc wc_id <<<"$state"
+
+case "$fill $desc" in
+  "empty undescribed")
+    echo "$wc_id reused"
+    ;;
+  *" described")
+    jj new --quiet
+    echo "$(jj log -r @ --no-graph -T 'change_id.short()') new-on-top"
+    ;;
+  "nonempty undescribed")
+    jj new --quiet '@-'
+    echo "$(jj log -r @ --no-graph -T 'change_id.short()') new-beside-wip $wc_id"
+    ;;
+esac

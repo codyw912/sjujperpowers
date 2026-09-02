@@ -1,11 +1,10 @@
 {
   "name": "sjujperpowers",
-  "version": "6.3.0",
-  "description": "An agentic skills framework & software development methodology that works: planning, TDD, debugging, and collaboration workflows.",
+  "version": "0.1.0",
+  "description": "Jujutsu-native fork of obra/superpowers: jj-only skills, a roadmap layer, and support for Claude Code, Oh My Pi, Pi, Codex, and OpenCode",
   "author": {
-    "name": "Jesse Vincent",
-    "email": "jesse@fsck.com",
-    "url": "https://github.com/obra"
+    "name": "Cody White",
+    "url": "https://github.com/codyw912"
   },
   "homepage": "https://github.com/codyw912/sjujperpowers",
   "repository": "https://github.com/codyw912/sjujperpowers",
@@ -18,7 +17,9 @@
     "tdd",
     "debugging",
     "code-review",
-    "workflow"
+    "workflow",
+    "jujutsu",
+    "jj"
   ],
   "skills": "./skills/",
   "hooks": {},
@@ -26,7 +27,7 @@
     "displayName": "Sjujperpowers",
     "shortDescription": "Planning, TDD, debugging, and delivery workflows for coding agents",
     "longDescription": "Use Sjujperpowers to guide agent work through brainstorming, implementation planning, test-driven development, systematic debugging, parallel execution, code review, and finish-the-branch workflows.",
-    "developerName": "Jesse Vincent",
+    "developerName": "Cody White",
     "category": "Developer Tools",
     "capabilities": [
       "Interactive",

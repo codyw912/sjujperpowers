@@ -23,6 +23,14 @@ cleanup() {
     fi
 }
 
+jj_user() {
+    jj --config 'user.name="t"' --config 'user.email="t@example.com"' "$@"
+}
+
+short_id() {
+    jj log -r "$1" --no-graph -T 'change_id.short()' | tr -d '\n'
+}
+
 main() {
     echo "=== Test: sdd-workspace ==="
 
@@ -30,11 +38,11 @@ main() {
     trap cleanup EXIT
 
     # Resolve repo to its physical path so string comparisons match the
-    # helper's output (git rev-parse --show-toplevel resolves symlinks; on
-    # macOS mktemp lives under /var -> /private/var).
-    git init -q -b main "$TEST_ROOT/repo"
+    # helper's output (jj root resolves the workspace root; on macOS mktemp
+    # lives under /var -> /private/var).
+    jj git init "$TEST_ROOT/repo" >/dev/null
     local repo
-    repo="$(cd "$TEST_ROOT/repo" && git rev-parse --show-toplevel)"
+    repo="$(cd "$TEST_ROOT/repo" && jj root)"
 
     cat > "$repo/plan-a.md" <<'PLAN'
 # Plan A
@@ -98,24 +106,23 @@ PLAN
 
     printf 'x\n' > "$dir_a/artifact.md"
     local status
-    status="$(cd "$repo" && git status --porcelain)"
+    status="$(cd "$repo" && jj status)"
     # plan-a.md/plan-b.md are intentionally untracked fixture files; only the
     # workspace must be invisible.
     if [[ "$status" != *".sjujperpowers"* ]]; then
-        pass "workspace invisible to git status"
+        pass "workspace invisible to jj status"
     else
-        fail "workspace invisible to git status"
+        fail "workspace invisible to jj status"
         echo "    status: $status"
     fi
 
-    ( cd "$repo" && git add -A )
-    local staged
-    staged="$(cd "$repo" && git diff --cached --name-only)"
-    if [[ "$staged" != *".sjujperpowers"* ]]; then
-        pass "git add -A does not stage the workspace"
+    local files
+    files="$(cd "$repo" && jj file list)"
+    if [[ "$files" != *".sjujperpowers"* ]]; then
+        pass "workspace not tracked by jj"
     else
-        fail "git add -A does not stage the workspace"
-        echo "    staged: $staged"
+        fail "workspace not tracked by jj"
+        echo "    files: $files"
     fi
 
     # --- task-brief lands in its plan's directory ---
@@ -130,13 +137,15 @@ PLAN
     fi
 
     # --- review-package takes the plan first and lands in its directory ---
-    local git_id=(-c user.email=t@example.com -c user.name=t -c commit.gpgsign=false)
     ( cd "$repo" \
-        && git "${git_id[@]}" commit -qm c1 \
-        && printf 'y\n' > f && git add f \
-        && git "${git_id[@]}" commit -qm c2 )
-    local rp_out rp_path
-    rp_out="$(cd "$repo" && "$SDD_SCRIPTS/review-package" plan-a.md HEAD~1 HEAD)"
+        && printf 'y\n' > f \
+        && jj_user commit -m c1 \
+        && printf 'z\n' > f \
+        && jj_user commit -m c2 )
+    local base head rp_out rp_path
+    base="$(cd "$repo" && short_id '@--')"
+    head="$(cd "$repo" && short_id '@-')"
+    rp_out="$(cd "$repo" && "$SDD_SCRIPTS/review-package" plan-a.md "$base" "$head")"
     rp_path="$(printf '%s\n' "$rp_out" | sed -n 's/^wrote \(.*\): [0-9].*$/\1/p')"
     case "$rp_path" in
         "$repo/.sjujperpowers/sdd/plan-a/review-"*.diff)
@@ -148,7 +157,7 @@ PLAN
     esac
 
     rc=0
-    (cd "$repo" && "$SDD_SCRIPTS/review-package" HEAD~1 HEAD >/dev/null 2>&1) || rc=$?
+    (cd "$repo" && "$SDD_SCRIPTS/review-package" "$base" "$head" >/dev/null 2>&1) || rc=$?
     if [[ "$rc" -eq 2 ]]; then
         pass "review-package without a plan errors with exit 2"
     else
@@ -157,7 +166,7 @@ PLAN
     fi
 
     local rp_explicit
-    rp_explicit="$(cd "$repo" && "$SDD_SCRIPTS/review-package" plan-a.md HEAD~1 HEAD "$TEST_ROOT/explicit.diff")"
+    rp_explicit="$(cd "$repo" && "$SDD_SCRIPTS/review-package" plan-a.md "$base" "$head" "$TEST_ROOT/explicit.diff")"
     if [[ -s "$TEST_ROOT/explicit.diff" && "$rp_explicit" == *"$TEST_ROOT/explicit.diff"* ]]; then
         pass "review-package honors an explicit OUTFILE"
     else
@@ -165,27 +174,30 @@ PLAN
         echo "    got: $rp_explicit"
     fi
 
-    # --- Worktree isolation: a linked worktree resolves its own workspace ---
+    # --- Workspace isolation: a second jj workspace resolves its own dir ---
     local wt="$TEST_ROOT/wt"
-    ( cd "$repo" && git worktree add -q "$wt" -b wt-feature )
+    ( cd "$repo" && jj workspace add "$wt" >/dev/null )
+    if [[ ! -f "$wt/plan-a.md" ]]; then
+        cp "$repo/plan-a.md" "$wt/plan-a.md"
+    fi
     local wt_root wt_dir
-    wt_root="$(cd "$wt" && git rev-parse --show-toplevel)"
+    wt_root="$(cd "$wt" && jj root)"
     wt_dir="$(cd "$wt" && "$SDD_SCRIPTS/sdd-workspace" plan-a.md)"
     if [[ "$wt_dir" == "$wt_root/.sjujperpowers/sdd/plan-a" && "$wt_dir" != "$dir_a" ]]; then
-        pass "linked worktree resolves its own distinct workspace"
+        pass "linked workspace resolves its own distinct workspace"
     else
-        fail "linked worktree resolves its own distinct workspace"
+        fail "linked workspace resolves its own distinct workspace"
         echo "    main: $dir_a"
         echo "    wt:   $wt_dir"
     fi
 
     printf 'y\n' > "$wt_dir/artifact.md"
     local wt_status
-    wt_status="$(cd "$wt" && git status --porcelain)"
+    wt_status="$(cd "$wt" && jj status)"
     if [[ "$wt_status" != *".sjujperpowers"* ]]; then
-        pass "worktree workspace invisible to git status"
+        pass "workspace dir invisible to jj status"
     else
-        fail "worktree workspace invisible to git status"
+        fail "workspace dir invisible to jj status"
         echo "    status: $wt_status"
     fi
 

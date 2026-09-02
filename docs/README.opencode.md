@@ -17,8 +17,8 @@ registers all skills.
 
 Verify by asking: "Tell me about your sjujperpowers"
 
-OpenCode uses its own plugin install. If you also use Claude Code, Codex, or
-another harness, install Sjujperpowers separately for each one.
+OpenCode uses its own plugin install. If you also use Claude Code, Oh My Pi, Pi, or
+Codex, install Sjujperpowers separately for each one.
 
 ### Migrating from the old symlink-based install
 
@@ -91,7 +91,7 @@ To pin a specific version, use a branch or tag:
 
 ```json
 {
-  "plugin": ["sjujperpowers@git+https://github.com/codyw912/sjujperpowers.git#v5.0.3"]
+  "plugin": ["sjujperpowers@git+https://github.com/codyw912/sjujperpowers.git#v0.1.0"]
 }
 ```
 

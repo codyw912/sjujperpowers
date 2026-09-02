@@ -80,29 +80,26 @@ default_subagent_reasoning_effort = "medium"
 
 ## Environment Detection
 
-Skills that create worktrees or finish branches should detect their
-environment with read-only git commands before proceeding:
+Skills that start or finish a change stack detect their environment with
+read-only jj commands before proceeding:
 
 ```bash
-GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
-GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
-BRANCH=$(git branch --show-current)
+jj root                                             # not a jj repo → stop, offer `jj git init --colocate`
+jj workspace list                                   # more than one line → a named workspace exists
+jj log -r 'trunk()' --no-graph -T 'bookmarks'       # empty → trunk() fell back to root()
 ```
 
-- `GIT_DIR != GIT_COMMON` → already in a linked worktree (skip creation)
-- `BRANCH` empty → detached HEAD (cannot branch/push/PR from sandbox)
-
-See `starting-a-change` Step 0 and `finishing-a-change-stack`
-Step 1 for how each skill uses these signals.
+See `starting-a-change` Step 0-1 and `finishing-a-change-stack` Step 3
+for how each skill uses these signals.
 
 ## Codex App Finishing
 
-When the sandbox blocks branch/push operations (detached HEAD in an
-externally managed worktree), the agent commits all work and informs
-the user to use the App's native controls:
+When the sandbox blocks `jj git push` or bookmark moves (an externally
+managed checkout), the agent describes all work (`jj describe` / `jj commit`)
+and informs the user to use the App's native controls:
 
-- **"Create branch"** — names the branch, then commit/push/PR via App UI
+- **"Create branch"** — names the bookmark, then push/PR via App UI
 - **"Hand off to local"** — transfers work to the user's local checkout
 
-The agent can still run tests, stage files, and output suggested branch
-names, commit messages, and PR descriptions for the user to copy.
+The agent can still run tests and output suggested bookmark names, change
+descriptions, and PR descriptions for the user to copy.

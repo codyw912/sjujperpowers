@@ -1,140 +1,63 @@
 ---
 name: starting-a-change
-description: Use when starting feature work that needs isolation from current workspace or before executing implementation plans - ensures an isolated workspace exists via native tools or git worktree fallback
+description: Use when starting feature work or before executing an implementation plan - puts the work on a fresh jj change on trunk so nothing in flight gets absorbed
 ---
 
-# Using Git Worktrees
+# Starting a Change
 
 ## Overview
 
-Ensure work happens in an isolated workspace. Prefer your platform's native worktree tools. Fall back to manual git worktrees only when no native tool is available.
+Put work on a fresh jj change without absorbing anything in flight. Isolation is a change, not a directory. The stack you build on (`trunk()..@` — roadmap, spec, plan commits) stays in the working copy; only loose, undescribed WIP is kept out.
 
-**Core principle:** Detect existing isolation first. Then use native tools. Then fall back to git. Never fight the harness.
+**Announce at start:** "I'm using the starting-a-change skill to put this work on a fresh jj change."
 
-**Announce at start:** "I'm using the starting-a-change skill to set up an isolated workspace."
+## Step 0: Confirm jj repo
 
-## Step 0: Detect Existing Isolation
+Run `jj root`. If it fails, stop:
 
-**Before creating anything, check if you are already in an isolated workspace.**
+> This isn't a jj repo. Run `jj git init --colocate` and re-run, or tell me to continue without VCS steps.
 
-```bash
-GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
-GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
-BRANCH=$(git branch --show-current)
-```
+## Step 1: Fresh change
 
-**Submodule guard:** `GIT_DIR != GIT_COMMON` is also true inside git submodules. Before concluding "already in a worktree," verify you are not in a submodule:
+Run this skill's `scripts/fresh-change`. It applies three rules and prints `<change-id> <mode>`:
 
-```bash
-# If this returns a path, you're in a submodule, not a worktree — treat as normal repo
-git rev-parse --show-superproject-working-tree 2>/dev/null
-```
+| `@` is | It does | Why |
+|--------|---------|-----|
+| empty + undescribed | reuse it (`reused`) | the normal state right after `jj commit` — the spec/plan you just committed sit below it |
+| described | `jj new` on top (`new-on-top`) | a described change is deliberate work; build on it |
+| non-empty + undescribed | `jj new @-` (`new-beside-wip <id>`) | loose WIP stays in its own change beside yours, untouched |
 
-**If `GIT_DIR != GIT_COMMON` (and not a submodule):** You are already in a linked worktree. Skip to Step 2 (Project Setup). Do NOT create another worktree.
+Never `jj new trunk()` — that orphans the spec and plan committed above trunk. Never edit, squash, or abandon the user's change.
 
-Report with branch state:
-- On a branch: "Already in isolated workspace at `<path>` on branch `<name>`."
-- Detached HEAD: "Already in isolated workspace at `<path>` (detached HEAD, externally managed). Branch creation needed at finish time."
+If the script warns that no trunk was found (a brand-new local repo: `trunk()` resolves to `root()` and there is no local `main`/`master`/`trunk` bookmark), relay the fix now so finishing works later: `jj bookmark create main -r <base>`. No config change is needed — `scripts/trunk-rev` resolves the trunk at runtime and every skill uses its output where it says `trunk()`.
 
-**If `GIT_DIR == GIT_COMMON` (or in a submodule):** You are in a normal repo checkout.
+Report the change ID and mode.
 
-Has the user already indicated their worktree preference in your instructions? If not, ask for consent before creating a worktree:
+## Step 2: Separate working directory (only on request)
 
-> "Would you like me to set up an isolated worktree? It protects your current branch from changes."
+Skip unless the user explicitly asks or a declared preference requires it.
 
-Honor any existing declared preference without asking. If the user declines consent, work in place and skip to Step 2.
+1. `jj workspace list` — if already in a named workspace for this work, skip creation.
+2. Run this skill's `scripts/add-workspace <name>`. It adds `.workspaces/` to `.gitignore` if missing and commits that edit by fileset first (jj auto-tracks every new file, and the workspace's change must descend from the ignore entry), then `jj workspace add .workspaces/<name> -r @-` — a sibling of the fresh change on the same parent — and prints `<path> <change-id>`.
+3. Work in that path. Report its change ID.
 
-## Step 1: Create Isolated Workspace
-
-**You have two mechanisms. Try them in this order.**
-
-### 1a. Native Worktree Tools (preferred)
-
-The user has asked for an isolated workspace (Step 0 consent). Do you already have a way to create a worktree? It might be a tool with a name like `EnterWorktree`, `WorktreeCreate`, a `/worktree` command, or a `--worktree` flag. If you do, use it and skip to Step 2.
-
-Native tools handle directory placement, branch creation, and cleanup automatically. Using `git worktree add` when you have a native tool creates phantom state your harness can't see or manage.
-
-Only proceed to Step 1b if you have no native worktree tool available.
-
-### 1b. Git Worktree Fallback
-
-**Only use this if Step 1a does not apply** — you have no native worktree tool available. Create a worktree manually using git.
-
-#### Directory Selection
-
-Follow this priority order. Explicit user preference always beats observed filesystem state.
-
-1. **Check your instructions for a declared worktree directory preference.** If the user has already specified one, use it without asking.
-
-2. **Check for an existing project-local worktree directory:**
-   ```bash
-   ls -d .worktrees 2>/dev/null     # Preferred (hidden)
-   ls -d worktrees 2>/dev/null      # Alternative
-   ```
-   If found, use it. If both exist, `.worktrees` wins.
-
-3. **If there is no other guidance available**, default to `.worktrees/` at the project root.
-
-#### Safety Verification (project-local directories only)
-
-**MUST verify directory is ignored before creating worktree:**
+## Step 3: Project Setup
 
 ```bash
-git check-ignore -q .worktrees 2>/dev/null || git check-ignore -q worktrees 2>/dev/null
-```
-
-**If NOT ignored:** Add to .gitignore, commit the change, then proceed.
-
-**Why critical:** Prevents accidentally committing worktree contents to repository.
-
-#### Create the Worktree
-
-```bash
-# Determine path based on chosen location
-path="$LOCATION/$BRANCH_NAME"
-
-git worktree add "$path" -b "$BRANCH_NAME"
-cd "$path"
-```
-
-**Sandbox fallback:** If `git worktree add` fails with a permission error (sandbox denial), tell the user the sandbox blocked worktree creation and you're working in the current directory instead. Then run setup and baseline tests in place.
-
-## Step 2: Project Setup
-
-Auto-detect and run appropriate setup:
-
-```bash
-# Node.js
 if [ -f package.json ]; then npm install; fi
-
-# Rust
 if [ -f Cargo.toml ]; then cargo build; fi
-
-# Python
-if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-if [ -f pyproject.toml ]; then poetry install; fi
-
-# Go
+if [ -f pyproject.toml ]; then uv sync; elif [ -f requirements.txt ]; then uv venv && uv pip install -r requirements.txt; fi
 if [ -f go.mod ]; then go mod download; fi
 ```
 
-## Step 3: Verify Clean Baseline
+## Step 4: Verify Clean Baseline
 
-Run tests to ensure workspace starts clean:
+Run `npm test` / `cargo test` / `pytest` / `go test ./...`.
 
-```bash
-# Use project-appropriate command
-npm test / cargo test / pytest / go test ./...
-```
-
-**If tests fail:** Report failures, ask whether to proceed or investigate.
-
-**If tests pass:** Report ready.
-
-### Report
+**If tests fail:** Report failures, ask whether to proceed or investigate. **If tests pass:** Report ready.
 
 ```
-Worktree ready at <full-path>
+Change <change-id> (<mode>) at <path>
 Tests passing (<N> tests, 0 failures)
 Ready to implement <feature-name>
 ```
@@ -143,25 +66,20 @@ Ready to implement <feature-name>
 
 | Situation | Action |
 |-----------|--------|
-| Already in linked worktree | Skip creation (Step 0) |
-| In a submodule | Treat as normal repo (Step 0 guard) |
-| Native worktree tool available | Use it (Step 1a) |
-| No native tool | Git worktree fallback (Step 1b) |
-| `.worktrees/` exists | Use it (verify ignored) |
-| `worktrees/` exists | Use it (verify ignored) |
-| Both exist | Use `.worktrees/` |
-| Neither exists | Check instruction file, then default `.worktrees/` |
-| Directory not ignored | Add to .gitignore + commit |
-| Permission error on create | Sandbox fallback, work in place |
-| Tests fail during baseline | Report failures + ask |
-| No package.json/Cargo.toml | Skip dependency install |
+| `jj root` fails | Stop with the contract message |
+| `@` empty + undescribed | Reuse `@` |
+| `@` described | `jj new` on top |
+| `@` non-empty + undescribed (loose WIP) | `jj new @-` — sibling, WIP untouched |
+| No trunk found | Relay `jj bookmark create main -r <base>` |
+| User asks for a separate directory | Ignore `.workspaces/`, then `jj workspace add` |
+| Already in a named workspace | Skip `workspace add` |
+| Tests fail at baseline | Report + ask |
 
 ## Common Rationalizations
 
 | Excuse | Reality |
 |--------|---------|
-| "I'm obviously not in a worktree — no need to check" | Run Step 0. Harness-created isolation and submodules both fool eyeballing; the detection commands settle it. |
-| "`git worktree add` is quicker than hunting for a native tool" | A native tool (e.g. `EnterWorktree`) owns placement, branching, and cleanup. Bypassing it is the #1 mistake — it creates phantom state your harness can't see or manage. |
-| "The worktree directory is surely ignored already" | Run `git check-ignore`. An unignored worktree directory commits the whole tree into the repo. |
-| "Any directory name works" | Explicit instructions beat an existing project-local directory, which beats the `.worktrees/` default. |
-| "The workspace is fresh — baseline tests can wait" | A dirty baseline makes every later failure ambiguous. Run the tests now; proceeding past failures is your human partner's call. |
+| "I'm obviously on a clean change" | Run the script. Non-empty undescribed `@` is someone's WIP; stacking on it absorbs it. |
+| "`jj new trunk()` gives the cleanest start" | It orphans the spec and plan committed above trunk. Stay on the stack; step beside WIP only. |
+| "The workspace dir is surely ignored" | Grep `.gitignore`. An unignored workspace directory is snapshotted. |
+| "Baseline tests can wait" | A dirty baseline makes every later failure ambiguous. Run them now. |

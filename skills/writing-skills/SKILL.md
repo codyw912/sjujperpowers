@@ -9,7 +9,7 @@ description: Use when creating new skills, editing existing skills, or verifying
 
 **Writing skills IS Test-Driven Development applied to process documentation.**
 
-**Personal skills live in your runtime's skills directory** (`~/.claude/skills/` on Claude Code) — see [codex-tools.md](../using-sjujperpowers/references/codex-tools.md) or [gemini-tools.md](../using-sjujperpowers/references/gemini-tools.md) for the path on those runtimes. Codex, Copilot CLI, and Gemini CLI all also recognize `~/.agents/skills/` as a cross-runtime alias.
+**Personal skills live in your runtime's skills directory** (`~/.claude/skills/` on Claude Code; `~/.agents/skills/` on Codex — see [codex-tools.md](../using-sjujperpowers/references/codex-tools.md); `~/.pi/agent/skills/` on Pi and Oh My Pi — see [pi-tools.md](../using-sjujperpowers/references/pi-tools.md)).
 
 You write test cases (pressure scenarios with subagents), watch them fail (baseline behavior), write the skill (documentation), watch tests pass (agents comply), and refactor (close loopholes).
 
@@ -662,8 +662,7 @@ Deploying untested skills = deploying untested code. It's a violation of quality
 - [ ] Supporting files only for tools or heavy reference
 
 **Deployment:**
-- [ ] Commit skill to git and push to your fork (if configured)
-- [ ] Consider contributing back via PR (if broadly useful)
+- [ ] `jj commit` the skill; push a bookmark only when your human partner asks
 
 ## Discovery Workflow
 

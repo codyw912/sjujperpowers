@@ -25,8 +25,8 @@ going. A wrong ruling costs rework your human partner can see and undo; a
 session parked on a question costs their whole day and buys nothing.
 
 Four things stop you, and only these: an irreversible or destructive
-operation; a security-sensitive action; a side effect outside this worktree
-that norms say you ask about first (a merge, a push to a shared branch, a
+operation; a security-sensitive action; a side effect outside this working copy
+that norms say you ask about first (a merge, a push to a shared remote, a
 publish); and a plan so broken that every path forward is a guess. For those,
 stop and ask.
 
@@ -83,14 +83,14 @@ digraph process {
         "Append completion to ledger, mark todo complete" [shape=box];
     }
 
-    "Setup: worktree, ledger check, read plan, pre-flight review" [shape=box];
+    "Setup: isolated change, ledger check, read plan, pre-flight review" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [shape=box];
     "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" [shape=box];
     "Final review clean: delete this plan's workspace" [shape=box];
     "Use sjujperpowers:finishing-a-change-stack" [shape=box style=filled fillcolor=lightgreen];
 
-    "Setup: worktree, ledger check, read plan, pre-flight review" -> "Dispatch implementer subagent (./implementer-prompt.md)";
+    "Setup: isolated change, ledger check, read plan, pre-flight review" -> "Dispatch implementer subagent (./implementer-prompt.md)";
     "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer asks questions?";
     "Implementer asks questions?" -> "Answer questions, provide context" [label="yes"];
     "Answer questions, provide context" -> "Implementer implements, tests, commits, self-reviews";
@@ -123,10 +123,10 @@ digraph process {
 
 ## Setup
 
-Ensure the work happens in an isolated workspace: use
-sjujperpowers:starting-a-change to create one or verify the existing one.
-Never start implementation on a main/master branch without your human
-partner's explicit consent.
+Start on a fresh change: use sjujperpowers:starting-a-change (its
+`scripts/fresh-change` reuses an empty `@`, stacks on described work, and
+steps beside loose WIP). Never build inside a change that already holds
+someone else's undescribed work.
 
 Conversation memory does not survive compaction. In real sessions,
 controllers that lost their place have re-dispatched entire completed task
@@ -134,7 +134,7 @@ sequences — the single most expensive failure observed. Track progress in
 a ledger file, not only in todos.
 
 - Each plan owns a workspace: at skill start, run this skill's
-  `scripts/sdd-workspace PLAN_FILE` — it prints the plan's git-ignored
+  `scripts/sdd-workspace PLAN_FILE` — it prints the plan's ignored
   directory (`<repo-root>/.sjujperpowers/sdd/<plan-basename>/`), home to
   every artifact for THIS plan: ledger, briefs, reports, review packages.
   Another plan's directory is never yours to read or write.
@@ -147,11 +147,12 @@ a ledger file, not only in todos.
   plan's progress: leave it in place and start your own, fresh.
 - Create the ledger with its identity as the first line:
   `# SDD ledger — plan: <plan file path>`.
-- The ledger is your recovery map: the commits it names exist in git even
-  when your context no longer remembers creating them. After compaction,
-  trust the ledger and `git log` over your own recollection.
-- `git clean -fdx` will destroy the workspace (it's git-ignored scratch); if
-  that happens, recover from `git log`.
+- The ledger is your recovery map: the change IDs it names survive rebase,
+  squash, and describe even when your context no longer remembers creating
+  them. After compaction, trust the ledger and `jj log` over your own
+  recollection.
+- The workspace is ignored scratch, so `jj restore` / `jj abandon` cannot
+  delete it. If it is removed from disk, recover from `jj log`.
 
 Read the plan once, note its context and Global Constraints, and create a
 todo per task. If the plan names a Spec, read that too: the spec is the
@@ -245,8 +246,16 @@ child is noticed within minutes, not at the end of the session.
 
 ### 1. Dispatch the implementer
 
-Record BASE (`git rev-parse HEAD`) before dispatching — the review package
-and fix-round diffs need it.
+Record BASE before dispatching — the review package and fix-round diffs
+need it. `@` must be empty first (`jj new` if it isn't); then BASE is the
+parent's **commit ID**: `jj log -r @- --no-graph -T 'commit_id'`. A commit
+ID is an immutable snapshot — jj resolves it even after the change is
+rewritten or hidden — so a fix round that amends an earlier change still
+diffs correctly. Never record `@` itself: the implementer's first
+`jj commit` fills that very change. Never record a change ID as a review
+boundary: it follows rewrites, and a diff from it silently drops amended
+work. Change IDs belong in the ledger, for orientation. HEAD for every
+package is `@` — an empty `@` contributes nothing.
 
 - **Task brief:** before dispatching an implementer, run this skill's
   `scripts/task-brief PLAN_FILE N` — it extracts the task's full text to a
@@ -263,7 +272,7 @@ and fix-round diffs need it.
 - **Report file:** name the implementer's report file after the brief
   (brief `…/task-N-brief.md` → report `…/task-N-report.md`) and put it in
   the dispatch prompt. The implementer writes the full report there and
-  returns only status, commits, a one-line test summary, and concerns.
+  returns only status, change IDs, a one-line test summary, and concerns.
 - A dispatch prompt describes one task, not the session's history. Do not
   paste accumulated prior-task summaries ("state after Tasks 1-3") into
   later dispatches — a real session's dispatch hit 42k chars of which 99%
@@ -287,7 +296,7 @@ Template: [implementer-prompt.md](implementer-prompt.md)
 
 Implementer subagents report one of four statuses. Handle each appropriately:
 
-**DONE:** Generate the review package (`scripts/review-package PLAN_FILE BASE HEAD`, from this skill's directory — it prints the unique file path it wrote; BASE is the commit you recorded before dispatching the implementer — never `HEAD~1`, which silently drops all but the last commit of a multi-commit task), then dispatch the task reviewer with the printed path.
+**DONE:** DONE requires no conflicts in `trunk()..@` (`jj log -r 'trunk()..@ & conflicts()'` prints nothing) and `jj status` clean of unexpected files. Generate the review package (`scripts/review-package PLAN_FILE BASE @`, from this skill's directory — it prints the unique file path it wrote; BASE is the commit ID you recorded before dispatching the implementer, never something you re-derive afterwards, which silently drops earlier changes of a multi-change task), then dispatch the task reviewer with the printed path.
 
 **DONE_WITH_CONCERNS:** The implementer completed the work but flagged doubts. Read the concerns before proceeding. If the concerns are about correctness or scope, address them before review. If they're observations (e.g., "this file is getting large"), note them and proceed to review.
 
@@ -315,12 +324,12 @@ needed.
 
 - Hand the reviewer its diff as a file: run this skill's
   `scripts/review-package PLAN_FILE BASE HEAD` and pass the reviewer the file path
-  it prints (or, without bash: `git log --oneline`, `git diff --stat`,
-  and `git diff -U10` for the range, redirected to one uniquely named
+  it prints (or, without bash: `jj log -r 'BASE..HEAD' --no-graph -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'`, `jj diff --from BASE --to HEAD --stat`,
+  and `jj diff --from BASE --to HEAD --git --context 10` for the range, redirected to one uniquely named
   file). The output never enters your own context, and the reviewer sees
-  the commit list, stat summary, and full diff with context in one Read
+  the change list, stat summary, and full diff with context in one Read
   call. Use the BASE you recorded before dispatching the implementer —
-  never `HEAD~1`, which silently truncates multi-commit tasks. Never
+  never `@-` as HEAD (an empty `@` contributes nothing). Never
   dispatch a task reviewer without a diff file.
 - **Reviewer inputs:** the task reviewer gets three paths — the same brief
   file, the report file, and the review package — plus the global
@@ -393,8 +402,9 @@ output; dispatch the re-review once all three are present. Name the
 covering test files in the fix message — a one-line fix does not need the
 whole suite.
 
-**The re-review is scoped.** Run `scripts/review-package PLAN_FILE FIX_BASE HEAD`
-where FIX_BASE is the head the previous review saw, and dispatch
+**The re-review is scoped.** Run `scripts/review-package PLAN_FILE FIX_BASE @`
+where FIX_BASE is the head the previous review saw — the commit ID of `@-`
+with `@` empty, recorded before dispatching the fix — and dispatch
 [re-review-prompt.md](re-review-prompt.md) with the findings list, the
 brief, the report file, and the printed diff path. The re-reviewer verdicts
 each finding ADDRESSED or NOT ADDRESSED and flags new breakage in the fix
@@ -403,7 +413,7 @@ findings list. Out-of-scope observations go to the ledger as deferred
 minors — they never extend the loop.
 
 **After each round,** append to the ledger:
-`Task <N>: fix round <R>/5 (<X> addressed, <Y> open — <finding one-liners>; commits <a7>..<b7>)`
+`Task <N>: fix round <R>/5 (<X> addressed, <Y> open — <finding one-liners>; changes <a>..<b>)`
 
 Never fix findings yourself in the controller session — your context stays
 clean for coordination, and controller fixes skip review.
@@ -434,8 +444,8 @@ When the review comes back clean — or every open finding is parked with a
 ruling at the cap — append the completion line to the ledger in the same
 message as your other bookkeeping:
 
-- `Task <N>: complete (commits <base7>..<head7>, review clean)`
-- `Task <N>: complete (commits <base7>..<head7>, <K> parked)` after a
+- `Task <N>: complete (changes <base>..<head>, review clean)`
+- `Task <N>: complete (changes <base>..<head>, <K> parked)` after a
   tripped breaker
 
 Then mark the todo complete and move on. Never move to the next task while
@@ -445,10 +455,9 @@ parked-with-ruling at the cap.
 ## Final Review
 
 The final whole-branch review gets a package too: run
-`scripts/review-package PLAN_FILE MERGE_BASE HEAD` (MERGE_BASE = the commit the
-branch started from, e.g. `git merge-base main HEAD`) and include the
+`scripts/review-package PLAN_FILE MERGE_BASE @`. MERGE_BASE is the trunk's commit ID: resolve the trunk with the starting-a-change skill's `scripts/trunk-rev` (jj's built-in `trunk()` is `root()` in a local-only repo), then `jj log -r "$TRUNK" --no-graph -T 'commit_id'`. Include the
 printed path in the final review dispatch, so the final reviewer reads
-one file instead of re-deriving the branch diff with git commands. Dispatch
+one file instead of re-deriving the stack diff with jj commands. Dispatch
 on the most capable available model (see Model Selection), using
 sjujperpowers:requesting-code-review's
 [code-reviewer.md](../requesting-code-review/code-reviewer.md). Point it at
@@ -480,7 +489,7 @@ whatever you got wrong. A ruling that dies with the workspace was a decision
 made in secret.
 
 When the final whole-branch review is clean and its fixes are merged,
-delete this plan's workspace (`rm -rf <workspace>`) — the git history is
+delete this plan's workspace (`rm -rf <workspace>`) — `jj log` is
 the record now. Sibling directories belong to other plans; leave them
 alone.
 
@@ -505,7 +514,7 @@ Use sjujperpowers:finishing-a-change-stack.
 ```
 You: I'm using Subagent-Driven Development to execute this plan.
 
-[Setup: worktree verified]
+[Setup: isolated change verified]
 [Read plan file once: docs/sjujperpowers/plans/feature-plan.md]
 [Resolve workspace: scripts/sdd-workspace docs/sjujperpowers/plans/feature-plan.md — no ledger inside, fresh start]
 [Create todos for all tasks]
@@ -528,7 +537,7 @@ Implementer: [Later]
 Task reviewer: Spec ✅ - all requirements met, nothing extra.
   Strengths: Good test coverage, clean. Issues: None. Task quality: Approved.
 
-[Ledger: Task 1: complete (commits a1b2c3d..d4e5f6a, review clean)]
+[Ledger: Task 1: complete (changes a1b2c3d..d4e5f6a, review clean)]
 
 Task 2: Recovery modes
 
@@ -553,8 +562,8 @@ Re-reviewer: Missing progress reporting — ADDRESSED (src/recovery.js:41).
   Magic number — ADDRESSED (src/recovery.js:7). New breakage: none.
   Verdict: all findings addressed.
 
-[Ledger: Task 2: fix round 1/5 (2 addressed, 0 open; commits d4e5f6a..b7c8d9e)]
-[Ledger: Task 2: complete (commits d4e5f6a..b7c8d9e, review clean)]
+[Ledger: Task 2: fix round 1/5 (2 addressed, 0 open; changes d4e5f6a..b7c8d9e)]
+[Ledger: Task 2: complete (changes d4e5f6a..b7c8d9e, review clean)]
 
 ...
 
@@ -562,7 +571,7 @@ Re-reviewer: Missing progress reporting — ADDRESSED (src/recovery.js:41).
 [Run review-package PLAN_FILE MERGE_BASE HEAD; dispatch final code-reviewer, most capable model]
 Final reviewer: All requirements met. Deferred minors triaged: none block merge.
 
-[Delete this plan's workspace — the record now lives in git]
+[Delete this plan's workspace — the record now lives in jj]
 
 Done! Using sjujperpowers:finishing-a-change-stack.
 ```

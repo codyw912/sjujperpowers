@@ -1,11 +1,21 @@
 {
   "name": "sjujperpowers-dev",
+  "description": "Jujutsu-native fork of obra/superpowers: jj-only skills, a roadmap layer, and support for Claude Code, Oh My Pi, Pi, Codex, and OpenCode",
+  "author": "Cody White",
+  "homepage": "https://github.com/codyw912/sjujperpowers",
+  "repository": "https://github.com/codyw912/sjujperpowers",
+  "version": "0.1.0",
   "interface": {
     "displayName": "Sjujperpowers Dev"
   },
   "plugins": [
     {
       "name": "sjujperpowers",
+      "description": "Jujutsu-native fork of obra/superpowers: jj-only skills, a roadmap layer, and support for Claude Code, Oh My Pi, Pi, Codex, and OpenCode",
+      "version": "0.1.0",
+      "author": "Cody White",
+      "homepage": "https://github.com/codyw912/sjujperpowers",
+      "repository": "https://github.com/codyw912/sjujperpowers",
       "source": {
         "source": "url",
         "url": "./"

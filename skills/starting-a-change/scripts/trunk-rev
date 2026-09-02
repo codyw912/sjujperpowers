@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Print a revset that names this repo's trunk, plus the bookmark behind it.
+#
+# jj's built-in trunk() only looks at remote bookmarks and falls back to
+# root() in a local-only repo. Rather than requiring a config write, resolve
+# at runtime: prefer the built-in when it has a remote bookmark, otherwise
+# the local bookmark main/master/trunk. Skills substitute the printed revset
+# wherever they say trunk().
+#
+# Output: `<revset> <bookmark>` (e.g. `trunk() main` or `main main`).
+# Exit 1 with a message when nothing qualifies.
+#
+# Usage: trunk-rev
+set -euo pipefail
+
+bookmarks=$(jj log -r 'trunk()' --no-graph -T 'bookmarks' 2>/dev/null || true)
+if [ -n "$bookmarks" ]; then
+  # `main@origin` → `main`; the built-in alias already names a real trunk.
+  first=${bookmarks%% *}
+  echo "trunk() ${first%%@*}"
+  exit 0
+fi
+
+for name in main master trunk; do
+  if [ -n "$(jj log -r "present(bookmarks(exact:\"$name\"))" --no-graph -T 'change_id.short()' 2>/dev/null)" ]; then
+    echo "$name $name"
+    exit 0
+  fi
+done
+
+echo "no trunk: trunk() resolves to root() and no local main/master/trunk bookmark exists. Create one on the base commit: jj bookmark create main -r <base>" >&2
+exit 1

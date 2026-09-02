@@ -13,7 +13,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** If working in an isolated worktree, it should have been created via the `sjujperpowers:starting-a-change` skill at execution time.
+**Context:** The plan is committed on the current stack by naming its file (`jj commit <plan-file> -m …` splits just that file out, leaving any loose WIP in `@`); execution then starts on a fresh change above it via `sjujperpowers:starting-a-change`, so the spec and plan stay in the working copy.
 
 **Save plans to:** `docs/sjujperpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
@@ -69,6 +69,8 @@ independently testable deliverable.
 **Spec:** [path to the spec/design doc this plan implements — the plan
 argues from the spec, so the spec travels with it; executors read both]
 
+**Milestone:** [M<N> — <title> from docs/sjujperpowers/roadmap.md, copied from the spec; or 'none (unplanned)']
+
 ## Global Constraints
 
 [The spec's project-wide requirements — version floors, dependency limits,
@@ -123,8 +125,7 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
+jj commit -m "feat: add specific feature"
 ```
 ````
 
@@ -150,9 +151,17 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 
-## Execution Handoff
+## Commit and Hand Off
 
-After saving the plan, offer execution choice:
+After the self-review, commit the plan file by name — never a bare `jj commit`, which would sweep unrelated working-copy changes into the plan commit:
+
+```bash
+jj commit docs/sjujperpowers/plans/YYYY-MM-DD-<feature-name>.md -m "Add <feature> implementation plan"
+```
+
+If the plan serves a roadmap milestone, include the roadmap edit (plan path under `**Plans:**`) in the same fileset: `jj commit docs/sjujperpowers/plans/<file>.md docs/sjujperpowers/roadmap.md -m …`.
+
+Then offer execution choice:
 
 **"Plan complete and saved to `docs/sjujperpowers/plans/<filename>.md`. Two execution options:**
 

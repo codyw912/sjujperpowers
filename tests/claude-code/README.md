@@ -92,6 +92,9 @@ Tests skill content and requirements (~2 minutes):
 - Review loops documented
 - Task context provision documented
 
+#### test-sdd-workspace.sh
+Workspace isolation for SDD scratch (~1 minute). Requires `jj`.
+
 ### Integration Tests (use --integration flag)
 
 #### test-subagent-driven-development-integration.sh
@@ -107,20 +110,13 @@ Full workflow execution test (~10-30 minutes):
   - Spec reviewer reads code independently
   - Working implementation is produced
   - Tests pass
-  - Proper git commits created
+  - Proper commits created
 
 **What it tests:**
 - The workflow actually works end-to-end
 - Our improvements are actually applied
 - Subagents follow the skill correctly
 - Final code is functional and tested
-
-#### test-worktree-native-preference.sh
-RED-GREEN-REFACTOR validation for the starting-a-change skill (~5 minutes):
-- RED: skill without Step 1a — agent should use `git worktree add`
-- GREEN: skill with Step 1a — agent should use the native EnterWorktree tool
-- PRESSURE: same as GREEN under urgency framing with pre-existing `.worktrees/`
-- Drill scenario `worktree-creation-under-pressure.yaml` covers the PRESSURE phase only
 
 ## Adding New Tests
 

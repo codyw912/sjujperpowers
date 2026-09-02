@@ -1,50 +1,18 @@
-# Sjujperpowers
+# sjujperpowers
 
-Sjujperpowers is a complete software development methodology for your coding agents, built on top of a set of composable skills and some initial instructions that make sure your agent uses them.
-
-## Table of Contents
-
-- [How it works](#how-it-works)
-- [Commercial Services](#commercial-services)
-- [Getting Started](#installation)
-  - [Claude Code](#claude-code)
-  - [Antigravity](#antigravity)
-  - [Codex App](#codex-app)
-  - [Codex CLI](#codex-cli)
-  - [Cursor](#cursor)
-  - [Devin CLI](#devin-cli)
-  - [Factory Droid](#factory-droid)
-  - [Gemini CLI](#gemini-cli)
-  - [GitHub Copilot CLI](#github-copilot-cli)
-  - [Grok Build CLI](#grok-build-cli)
-  - [Kimi Code](#kimi-code)
-  - [OpenCode](#opencode)
-  - [Pi](#pi)
-  - [Hermes Agent](#hermes-agent)
-- [The Basic Workflow](#the-basic-workflow)
-- [Community](#community)
-- [What's Inside](#whats-inside)
-- [Philosophy](#philosophy)
-- [Contributing](#contributing)
-- [Updating](#updating)
-- [License](#license)
-- [Visual companion telemetry](#visual-companion-telemetry)
+A personal fork of [obra/superpowers](https://github.com/obra/superpowers) that (1) is Jujutsu-native — skills speak `jj` only, work happens on fresh changes on `trunk()`, change IDs are the unit of record, landing is a bookmark move or `jj git push`; (2) adds a roadmap layer — `docs/sjujperpowers/roadmap.md` with milestones that specs and plans reference (`sjujperpowers:roadmapping`); (3) supports only Claude Code, Oh My Pi, Pi, Codex, and OpenCode; (4) drops the browser-based visual brainstorming companion.
 
 ## How it works
 
-It starts from the moment you fire up your coding agent. As soon as it sees that you're building something, it *doesn't* just jump into trying to write code. Instead, it steps back and asks you what you're really trying to do. 
+It starts from the moment you fire up your coding agent. As soon as it sees that you're building something, it *doesn't* just jump into writing code. It steps back and asks what you're really trying to do.
 
-Once it's teased a spec out of the conversation, it shows it to you in chunks short enough to actually read and digest. 
+Once it's teased a spec out of the conversation, it shows it to you in chunks short enough to actually read.
 
-After you've signed off on the design, your agent puts together an implementation plan that's clear enough for an enthusiastic junior engineer with poor taste, no judgement, no project context, and an aversion to testing to follow. It emphasizes true red/green TDD, YAGNI (You Aren't Gonna Need It), and DRY. 
+After you've signed off on the design, your agent puts together an implementation plan that's clear enough for an enthusiastic junior engineer with poor taste, no judgement, no project context, and an aversion to testing to follow. It emphasizes true red/green TDD, YAGNI, and DRY.
 
-Next up, once you say "go", it launches a *subagent-driven-development* process, having agents work through each engineering task, inspecting and reviewing their work, and continuing forward. It's not uncommon for your agent to work autonomously for a couple hours at a time without deviating from the plan you put together.
+When you say "go", it launches subagent-driven-development: agents work through each task, inspect and review, and continue. It's not uncommon for your agent to work autonomously for a couple hours without deviating from the plan.
 
-There's a bunch more to it, but that's the core of the system. And because the skills trigger automatically, you don't need to do anything special. Your coding agent just has Sjujperpowers.
-
-## Commercial Services
-
-If you're using Sjujperpowers in enterprise and could benefit from commercial support, additional tooling, or managed spending, please don't hesitate to drop us a line at sales@primeradiant.com.
+Because the skills trigger automatically, you don't need to do anything special.
 
 ## Installation
 
@@ -52,175 +20,31 @@ Installation differs by harness. If you use more than one, install Sjujperpowers
 
 ### Claude Code
 
-Sjujperpowers is available via the [official Claude plugin marketplace](https://claude.com/plugins/sjujperpowers)
-
-#### Official Marketplace
-
-- Install the plugin from Anthropic's official marketplace:
-
-  ```bash
-  /plugin install sjujperpowers@claude-plugins-official
-  ```
-
-#### Sjujperpowers Marketplace
-
-The Sjujperpowers marketplace provides Sjujperpowers and some other related plugins for Claude Code.
-
 - Register the marketplace:
 
-  ```bash
-  /plugin marketplace add codyw912/sjujperpowers-marketplace
+  ```
+  /plugin marketplace add codyw912/sjujperpowers
   ```
 
-- Install the plugin from this marketplace:
+- Install the plugin:
 
-  ```bash
-  /plugin install sjujperpowers@sjujperpowers-marketplace
+  ```
+  /plugin install sjujperpowers@sjujperpowers-dev
   ```
 
-### Antigravity
+### Codex (App and CLI)
 
-Install Sjujperpowers as a plugin from this repository:
+sjujperpowers is **not published** to the Codex plugin marketplace, so the `/plugins` search will not find it. Until it is, install the skills directly — Codex discovers skills from `~/.agents/skills/`:
 
 ```bash
-agy plugin install https://github.com/codyw912/sjujperpowers
+git clone https://github.com/codyw912/sjujperpowers ~/.agents/sjujperpowers
+mkdir -p ~/.agents/skills
+for s in ~/.agents/sjujperpowers/skills/*/; do ln -sfn "$s" ~/.agents/skills/"$(basename "$s")"; done
 ```
 
-Antigravity runs the plugin's session-start hook, so Sjujperpowers is active from
-the first message. Reinstall with the same command to update.
-
-### Codex App
-
-Sjujperpowers is available via the [official Codex plugin marketplace](https://github.com/openai/plugins).
-
-- In the Codex app, click on Plugins in the sidebar.
-- You should see `Sjujperpowers` in the Coding section.
-- Click the `+` next to Sjujperpowers and follow the prompts.
-
-### Codex CLI
-
-Sjujperpowers is available via the [official Codex plugin marketplace](https://github.com/openai/plugins).
-
-- Open the plugin search interface:
-
-  ```bash
-  /plugins
-  ```
-
-- Search for Sjujperpowers:
-
-  ```bash
-  sjujperpowers
-  ```
-
-- Select `Install Plugin`.
-
-### Cursor
-
-- In Cursor Agent chat, install from marketplace:
-
-  ```text
-  /add-plugin sjujperpowers
-  ```
-
-- Or search for "sjujperpowers" in the plugin marketplace.
-
-### Devin CLI
-
-- Install the plugin from this repository:
-
-  ```bash
-  devin plugins install codyw912/sjujperpowers
-  ```
-
-- Update to the latest version with:
-
-  ```bash
-  devin plugins update sjujperpowers
-  ```
-
-### Factory Droid
-
-- Register the marketplace:
-
-  ```bash
-  droid plugin marketplace add https://github.com/codyw912/sjujperpowers
-  ```
-
-- Install the plugin:
-
-  ```bash
-  droid plugin install sjujperpowers@sjujperpowers
-  ```
-
-### Gemini CLI
-
-- Install the extension:
-
-  ```bash
-  gemini extensions install https://github.com/codyw912/sjujperpowers
-  ```
-
-- Update later:
-
-  ```bash
-  gemini extensions update sjujperpowers
-  ```
-
-### GitHub Copilot CLI
-
-- Register the marketplace:
-
-  ```bash
-  copilot plugin marketplace add codyw912/sjujperpowers-marketplace
-  ```
-
-- Install the plugin:
-
-  ```bash
-  copilot plugin install sjujperpowers@sjujperpowers-marketplace
-  ```
-
-### Grok Build CLI
-
-Sjujperpowers is available via the [official Grok plugin marketplace](https://github.com/xai-org/plugin-marketplace).
-
-- Install the plugin from xAI's official marketplace:
-
-  ```bash
-  grok plugin install sjujperpowers@xai-official --trust
-  ```
-
-- Or open the marketplace in the TUI, search for Sjujperpowers, and install it:
-
-  ```text
-  /marketplace
-  ```
-
-### Kimi Code
-
-Sjujperpowers is available in Kimi Code's plugin marketplace.
-
-- Open Kimi Code's plugin manager:
-
-  ```text
-  /plugins
-  ```
-
-- Go to `Marketplace` > `Sjujperpowers` and install it.
-
-- Or install directly from this repository:
-
-  ```text
-  /plugins install https://github.com/codyw912/sjujperpowers
-  ```
-
-- Detailed docs: [docs/README.kimi.md](docs/README.kimi.md)
+Update with `git -C ~/.agents/sjujperpowers pull`. The repo also carries a Codex plugin manifest (`.codex-plugin/plugin.json`) and a local marketplace (`.agents/plugins/marketplace.json`) for when it is published; `scripts/package-codex-plugin.sh` builds the archive.
 
 ### OpenCode
-
-OpenCode uses its own plugin install; install Sjujperpowers separately even if you
-already use it in another harness.
 
 - Tell OpenCode:
 
@@ -230,7 +54,7 @@ already use it in another harness.
 
 - Detailed docs: [docs/README.opencode.md](docs/README.opencode.md)
 
-### Pi
+### Pi and Oh My Pi
 
 Install Sjujperpowers as a Pi package from this repository:
 
@@ -246,101 +70,39 @@ pi -e /path/to/sjujperpowers
 
 The Pi package loads the Sjujperpowers skills and a small extension that injects the `using-sjujperpowers` bootstrap at session startup and again after compaction. Pi has native skills, so no compatibility `Skill` tool is required. Subagent and task-list tools remain optional Pi companion packages.
 
-### Hermes Agent
+Oh My Pi loads `skill://<name>` from SKILL.md natively, so no bootstrap hook is required — installing the package still makes the skills discoverable.
 
-Install Sjujperpowers as a Hermes plugin from this repository:
+## The workflow
 
-```bash
-hermes plugins install codyw912/sjujperpowers --enable
-```
+1. **roadmapping** (`sjujperpowers:roadmapping`) — Capture long-term milestones in `docs/sjujperpowers/roadmap.md`. Specs and plans name the milestone they serve.
+2. **brainstorming** (`sjujperpowers:brainstorming`) — Refine the idea into a spec.
+3. **writing-plans** (`sjujperpowers:writing-plans`) — Break the spec into bite-sized tasks.
+4. **starting-a-change** (`sjujperpowers:starting-a-change`) — Isolate work on a fresh change on `trunk()`.
+5. **executing-plans** (`sjujperpowers:executing-plans`) or **subagent-driven-development** (`sjujperpowers:subagent-driven-development`) — Execute inline in batches, or dispatch a fresh subagent per task with two-stage review.
+6. **finishing-a-change-stack** (`sjujperpowers:finishing-a-change-stack`) — Land the stack.
 
-Restart any active Hermes sessions after installing. Note: Hermes has no
-post-compaction hook, so a very long session that compacts over its first
-turn loses the bootstrap — start a fresh session if skills stop triggering.
+Always-on: **test-driven-development**, **systematic-debugging**, **verification-before-completion**, **requesting-code-review**, **receiving-code-review**.
 
-## The Basic Workflow
+The agent checks for relevant skills before any task.
 
-1. **brainstorming** - Activates before writing code. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Saves design document.
+## What's inside
 
-2. **starting-a-change** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, verifies clean test baseline.
+- **using-sjujperpowers** — Bootstrap that makes the other skills fire
+- **roadmapping** — Long-term milestones that specs and plans reference
+- **brainstorming** — Socratic design refinement
+- **writing-plans** — Detailed implementation plans
+- **starting-a-change** — Isolated work on a fresh change on `trunk()`
+- **executing-plans** — Batch execution with checkpoints
+- **subagent-driven-development** — Fast iteration with two-stage review
+- **finishing-a-change-stack** — Land the stack
+- **requesting-code-review** — Pre-review checklist
+- **receiving-code-review** — Responding to feedback
+- **test-driven-development** — RED-GREEN-REFACTOR cycle
+- **systematic-debugging** — 4-phase root cause process
+- **verification-before-completion** — Ensure it's actually fixed
+- **dispatching-parallel-agents** — Concurrent subagent workflows
+- **writing-skills** — Create and test new skills
 
-3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
+## Credits
 
-4. **subagent-driven-development** or **executing-plans** - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or executes in batches with human checkpoints.
-
-5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
-
-6. **requesting-code-review** - Activates between tasks. Reviews against plan, reports issues by severity. Critical issues block progress.
-
-7. **finishing-a-change-stack** - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
-
-**The agent checks for relevant skills before any task.** Mandatory workflows, not suggestions.
-
-## Community
-
-Sjujperpowers is built by [Jesse Vincent](https://blog.fsck.com) and the rest of the folks at [Prime Radiant](https://primeradiant.com).
-
-- **Discord**: [Join us](https://discord.gg/35wsABTejz) for community support, questions, and sharing what you're building with Sjujperpowers
-- **Issues**: https://github.com/codyw912/sjujperpowers/issues
-- **Release announcements**: [Sign up](https://primeradiant.com/sjujperpowers/) to get notified about new versions
-
-## What's Inside
-
-### Skills Library
-
-**Testing**
-- **test-driven-development** - RED-GREEN-REFACTOR cycle (includes testing anti-patterns reference)
-
-**Debugging**
-- **systematic-debugging** - 4-phase root cause process (includes root-cause-tracing, defense-in-depth, condition-based-waiting techniques)
-- **verification-before-completion** - Ensure it's actually fixed
-
-**Collaboration** 
-- **brainstorming** - Socratic design refinement
-- **writing-plans** - Detailed implementation plans
-- **executing-plans** - Batch execution with checkpoints
-- **dispatching-parallel-agents** - Concurrent subagent workflows
-- **requesting-code-review** - Pre-review checklist
-- **receiving-code-review** - Responding to feedback
-- **starting-a-change** - Parallel development branches
-- **finishing-a-change-stack** - Merge/PR decision workflow
-- **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
-
-**Meta**
-- **writing-skills** - Create new skills following best practices (includes testing methodology)
-- **using-sjujperpowers** - Introduction to the skills system
-
-## Philosophy
-
-- **Test-Driven Development** - Write tests first, always
-- **Systematic over ad-hoc** - Process over guessing
-- **Complexity reduction** - Simplicity as primary goal
-- **Evidence over claims** - Verify before declaring success
-
-Read [the original release announcement](https://blog.fsck.com/2025/10/09/sjujperpowers/).
-
-## Contributing
-
-The general contribution process for Sjujperpowers is below. Keep in mind that we don't generally accept contributions of new skills and that any updates to skills must work across all of the coding agents we support.
-
-1. Fork the repository
-2. Switch to the 'dev' branch
-3. Create a branch for your work
-4. Follow the `writing-skills` skill for creating and testing new and modified skills
-5. Submit a PR, being sure to fill in the pull request template.
-
-Skill-behavior tests use the drill eval harness from [sjujperpowers-evals](https://github.com/prime-radiant-inc/sjujperpowers-evals/), cloned into `evals/` — see `evals/README.md` for setup. Plugin-infrastructure tests live at `tests/` and run via the relevant `run-*.sh` or `npm test`.
-
-See `skills/writing-skills/SKILL.md` for the complete guide.
-
-## Updating
-
-Sjujperpowers updates are somewhat coding-agent dependent, but are often automatic.
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Visual companion telemetry
-
-Because skills and plugins don't provide any feedback to creators, we have no idea how many of you are using Sjujperpowers. By default, the Prime Radiant logo on brainstorming's optional visual companion feature is loaded from our website. It includes the version of Sjujperpowers in use. It does not include any details about your project, prompt, or coding agent. We don't see your clicks or anything about what you're building. This helps us have a rough idea of how many folks are using Sjujperpowers and which version of Sjujperpowers they're using. It's 100% optional. To disable this, set the environment variable `SJUJPERPOWERS_DISABLE_TELEMETRY` to any true value. Sjujperpowers also honors Claude Code's `DISABLE_TELEMETRY` and `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` opt-outs.
+sjujperpowers is a personal fork of [obra/superpowers](https://github.com/obra/superpowers) by Jesse Vincent / Prime Radiant, released under the MIT License. See LICENSE.

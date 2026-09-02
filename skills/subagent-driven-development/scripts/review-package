@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Generate a review package: commit list, stat summary, and the net
+# Generate a review package: change list, stat summary, and the net
 # diff with extended context, written to a file the reviewer reads in one
-# call. Using the recorded per-task BASE (not HEAD~1) keeps multi-commit
-# tasks intact.
+# call. Using the recorded per-task BASE keeps multi-change tasks intact.
 #
 # Usage: review-package PLAN_FILE BASE HEAD [OUTFILE]
-# Default OUTFILE: <repo-root>/.sjujperpowers/sdd/<plan-basename>/review-<base7>..<head7>.diff
+# BASE is the commit ID recorded before dispatch (immutable: jj resolves it
+# even after the change was rewritten or hidden, so amended fix rounds still
+# diff correctly). HEAD is normally `@`. Any single-commit revset works.
+# Default OUTFILE: <repo-root>/.sjujperpowers/sdd/<plan-basename>/review-<base12>..<head12>.diff
 # (named per range, so a re-review after fixes gets a distinct fresh file).
 set -euo pipefail
 
@@ -19,28 +21,38 @@ base=$2
 head=$3
 [ -f "$plan" ] || { echo "no such plan file: $plan" >&2; exit 2; }
 
-git rev-parse --verify --quiet "$base" >/dev/null || { echo "bad BASE: $base" >&2; exit 2; }
-git rev-parse --verify --quiet "$head" >/dev/null || { echo "bad HEAD: $head" >&2; exit 2; }
+resolve() {
+  jj log -r "$1" --no-graph -T 'commit_id.short(12) ++ " " ++ change_id.short() ++ "\n"' 2>/dev/null
+}
+base_ids=$(resolve "$base") && [ "$(printf '%s\n' "$base_ids" | wc -l | tr -d ' ')" = 1 ] \
+  || { echo "bad BASE (must resolve to one commit): $base" >&2; exit 2; }
+head_ids=$(resolve "$head") && [ "$(printf '%s\n' "$head_ids" | wc -l | tr -d ' ')" = 1 ] \
+  || { echo "bad HEAD (must resolve to one commit): $head" >&2; exit 2; }
+base_short=${base_ids%% *}
+head_short=${head_ids%% *}
+# Empty, undescribed changes (typically the working copy `@`) carry no work; omit from the list.
+range="(${base}..${head}) ~ (empty() & description(exact:\"\"))"
 
 if [ $# -eq 4 ]; then
   out=$4
 else
   dir=$("$(cd "$(dirname "$0")" && pwd)/sdd-workspace" "$plan")
-  out="$dir/review-$(git rev-parse --short "$base")..$(git rev-parse --short "$head").diff"
+  out="$dir/review-${base_short}..${head_short}.diff"
 fi
 
 {
-  echo "# Review package: ${base}..${head}"
+  echo "# Review package: ${base_short}..${head_short}"
+  echo "# base: commit ${base_ids}"
+  echo "# head: commit ${head_ids}"
   echo
-  echo "## Commits"
-  git log --oneline "${base}..${head}"
+  echo "## Changes"
+  jj log -r "$range" --no-graph -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'
   echo
   echo "## Files changed"
-  git diff --stat "${base}..${head}"
+  jj diff --from "$base" --to "$head" --stat
   echo
   echo "## Diff"
-  git diff -U10 "${base}..${head}"
+  jj diff --from "$base" --to "$head" --git --context 10
 } > "$out"
-
-commits=$(git rev-list --count "${base}..${head}")
-echo "wrote ${out}: ${commits} commit(s), $(wc -c < "$out" | tr -d ' ') bytes"
+count=$(jj log -r "$range" --no-graph -T '"x\n"' | wc -l | tr -d ' ')
+echo "wrote ${out}: ${count} change(s), $(wc -c < "$out" | tr -d ' ') bytes"

@@ -27,7 +27,9 @@ Then announce "Using [skill] to [purpose]" and follow the skill exactly. If it h
 
 When multiple skills apply, process skills come first — they set the approach, then implementation skills (frontend-design, etc.) carry it out. Brainstorming and systematic-debugging are Sjujperpowers' most common process skills, but the rule holds for any of them.
 
+- "Start a new project" → sjujperpowers:roadmapping first, then brainstorming.
 - "Let's build X" → sjujperpowers:brainstorming first, then implementation skills.
+- "Where are we / what's next" → sjujperpowers:roadmapping.
 - "Fix this bug" → sjujperpowers:systematic-debugging first, then domain skills.
 
 ## Red Flags
@@ -39,7 +41,7 @@ These thoughts mean STOP—you're rationalizing:
 | "This is just a simple question" | Questions are tasks. Check for skills. |
 | "I need more context first" | Skill check comes BEFORE clarifying questions. |
 | "Let me explore the codebase first" | Skills tell you HOW to explore. Check first. |
-| "I can check git/files quickly" | Files lack conversation context. Check for skills. |
+| "I can check files quickly" | Files lack conversation context. Check for skills. |
 | "Let me gather information first" | Skills tell you HOW to gather information. |
 | "This doesn't need a formal skill" | If a skill exists, use it. |
 | "I remember this skill" | Skills evolve. Read current version. |
@@ -54,10 +56,8 @@ These thoughts mean STOP—you're rationalizing:
 If your harness appears here, read its reference file for special instructions:
 
 - Codex: `references/codex-tools.md`
-- Pi: `references/pi-tools.md`
-- Antigravity: `references/antigravity-tools.md`
-- Hermes Agent: `references/hermes-tools.md`
+- Pi / Oh My Pi: `references/pi-tools.md`
 
 ## User Instructions
 
-User instructions (CLAUDE.md, AGENTS.md, GEMINI.md, etc, direct requests) take precedence over skills, which in turn override default behavior. Only skip skill workflows or instructions when your human partner has explicitly told you to.
+User instructions (CLAUDE.md, AGENTS.md, etc, direct requests) take precedence over skills, which in turn override default behavior. Only skip skill workflows or instructions when your human partner has explicitly told you to.
