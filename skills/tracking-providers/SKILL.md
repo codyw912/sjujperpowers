@@ -95,13 +95,15 @@ Specs use the roadmap provider's native header:
 - File roadmap: `**Milestone:** M1 — Outcome title`
 - Bootstrap/no roadmap: `**Outcome:** none (bootstrap)`
 
-Plans carry one provider-neutral header copied exactly from the spec:
+Plans carry one provider-neutral header copied or derived from the spec:
 
-- `**Source:** plane:PROJ-12`
-- `**Source:** file:M1 — Outcome title`
-- `**Source:** none (bootstrap)`
+- Plane: copy the outcome value as `**Source:** plane:PROJ-12`.
+- File roadmap: convert `**Milestone:** M1 — Outcome title` to
+  `**Source:** file:M1 — Outcome title`.
+- No roadmap: copy the value as `**Source:** none (bootstrap)`.
 
-The source is opaque to the execution provider. Kata stores it as metadata but does not interpret or synchronize it.
+The source is opaque to the execution provider. Kata stores it as metadata but
+does not interpret or synchronize it.
 
 Kata issue references use Kata's qualified form, such as `example-product#abc4`. Carry the exact reference into the Jujutsu description and completion evidence.
 

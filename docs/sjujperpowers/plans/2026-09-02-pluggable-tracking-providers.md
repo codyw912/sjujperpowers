@@ -6,7 +6,7 @@
 
 **Architecture:** A shared `tracking-providers` skill owns configuration normalization and Kata plan materialization. Existing lifecycle skills invoke that contract at their current decision boundaries; they retain harness todos and SDD recovery artifacts while delegating only durable cross-session issue state to Kata.
 
-**Tech Stack:** Node.js ES modules and `node:test`, Markdown skills, Kata CLI v0.15.0, Jujutsu.
+**Tech Stack:** Node.js ES modules and `node:test`, Markdown skills, Kata CLI v0.16.0, Jujutsu.
 
 **Spec:** `docs/sjujperpowers/specs/2026-09-02-pluggable-tracking-providers-design.md`
 
@@ -209,9 +209,9 @@ jj commit \
 - Modify: `skills/tracking-providers/SKILL.md`
 
 **Interfaces:**
-- Consumes: `materializePlan({ root, planPath, config, runKata })` where the plan contains `# ... Implementation Plan`, `**Spec:**`, one generic `**Source:**` copied from the spec's Plane outcome or file milestone, and numbered `### Task N:` headings.
+- Consumes: `materializePlan({ root, planPath, config, runKata })` where the plan contains `# ... Implementation Plan`, `**Spec:**`, one generic `**Source:**` copied from a Plane outcome or derived by qualifying a file milestone with `file:`, and numbered `### Task N:` headings.
 - Produces: `{ parent: { ref, created }, children: [{ task, ref, created }] }` and a CLI `node materialize-plan.mjs --root DIR --plan PATH`.
-- Kata invocation uses `kata --project <name> create ... --json --idempotency-key <key>` and the parent/child relationship supported by Kata v0.15.0.
+- Kata invocation uses `kata --project <name> create ... --json --idempotency-key <key>` and the parent/child relationship supported by Kata v0.16.0.
 
 - [ ] **Step 1: Write plan parser and materialization tests**
 

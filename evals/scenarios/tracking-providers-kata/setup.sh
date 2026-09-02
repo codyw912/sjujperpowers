@@ -22,7 +22,7 @@ set -eu
 printf '%s\n' "$*" >> .kata-fixture/commands.log
 
 if [ "${1:-}" = version ]; then
-  printf '%s\n' 'kata v0.15.0'
+  printf '%s\n' 'kata v0.16.0'
   exit 0
 fi
 
