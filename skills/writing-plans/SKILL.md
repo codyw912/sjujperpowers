@@ -71,7 +71,7 @@ independently testable deliverable.
 **Spec:** [path to the spec/design doc this plan implements — the plan
 argues from the spec, so the spec travels with it; executors read both]
 
-**Source:** [copy the approved spec's source exactly: `plane:PROJ-12`, `file:M1 — <title>`, or `none (bootstrap)`]
+**Source:** [copy or derive the approved spec's source: copy `plane:PROJ-12` or `none (bootstrap)`; convert `M1 — <title>` to `file:M1 — <title>`]
 
 ## Global Constraints
 
