@@ -105,6 +105,20 @@ The source is opaque to the execution provider. Kata stores it as metadata but d
 
 Kata issue references use Kata's qualified form, such as `example-product#abc4`. Carry the exact reference into the Jujutsu description and completion evidence.
 
+## Kata plan activation
+
+After a Kata-backed plan is committed, materialize it:
+
+```bash
+node <tracking-providers skill dir>/scripts/materialize-plan.mjs \
+  --root "$(jj root)" \
+  --plan docs/sjujperpowers/plans/YYYY-MM-DD-feature.md
+```
+
+The command repeats checked provider resolution before mutation, creates one containment parent plus one child per numbered plan task, and prints normalized refs. Stable idempotency keys derive from the Kata project and repository-relative plan path, so retry the same command after a partial failure; do not create replacement issues manually.
+
+The parent and children record `sjujperpowers.plan`, `sjujperpowers.spec`, and `sjujperpowers.source` metadata. Children additionally record `sjujperpowers.task`. The source is provider-neutral, so `file + kata`, `plane + kata`, and bootstrap sources materialize identically.
+
 ## Plane edition compatibility
 
 Plane support is reference-based: do not claim to create, update, or close remote work automatically. A human or a separately authorized integration applies curated roll-ups.
