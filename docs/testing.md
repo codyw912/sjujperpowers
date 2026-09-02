@@ -20,6 +20,7 @@ Live in `tests/`. Currently:
 - `tests/shell-lint/` — shell lint.
 - `tests/fork-rename/` — `scripts/fork-rename.mjs` (upstream-name transform used when syncing; see `docs/upstream-sync.md`).
 - `tests/upstream-sync/` — the rebase step of `docs/upstream-sync.md`: preflight revset matches what `-s` moves, side branches off the stack survive with parent and diff intact.
+- `tests/evals/` — `evals/lib/checks.sh` counting semantics (`not` records one result), and every scenario's `post()` proven to pass a simulated correct outcome and fail each simulated wrong one.
 - `tests/explicit-skill-requests/` — LLM evals (Haiku-specific, multi-turn, and skill-name-prompted).
 
 Run plugin tests via the relevant directory's `run-*.sh` or `npm test`.

@@ -83,10 +83,12 @@ jj-described() { # <revset>
 }
 jj-file-in-rev() { _assert "jj-file-in-rev $1 $2" bash -c "jj file list -r '$1' | grep -qx -- '$2'"; }
 
-not() { # <verb> [args...]
-  local before=$EVAL_FAILURES
+not() { # <verb> [args...]  — runs the inner verb silently, records ONE inverted result
+  local checks=$EVAL_CHECKS failures=$EVAL_FAILURES
   "$@" >/dev/null
-  if [ "$EVAL_FAILURES" -gt "$before" ]; then EVAL_FAILURES=$before; _record PASS "not $*"; else _record FAIL "not $*"; fi
+  local inner_failed=$(( EVAL_FAILURES - failures ))
+  EVAL_CHECKS=$checks; EVAL_FAILURES=$failures
+  if [ "$inner_failed" -gt 0 ]; then _record PASS "not $*"; else _record FAIL "not $*"; fi
 }
 
 jj-file-anywhere() { # <path>  — path exists in the tree of some visible revision
