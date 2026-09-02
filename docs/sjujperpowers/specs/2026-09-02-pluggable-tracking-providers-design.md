@@ -155,7 +155,7 @@ The execution contract supports:
 - associating a Jujutsu change ID;
 - completing an issue after the configured completion milestone.
 
-The provider returns or records provider-qualified references such as `kata:sjujperpowers#abc4`. Skills treat those references as opaque identities rather than parsing vendor database IDs.
+The provider returns or records Kata's qualified references, such as `sjujperpowers#abc4`. Skills treat those references as opaque identities rather than parsing vendor database IDs.
 
 ### Kata preflight
 
