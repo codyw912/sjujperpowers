@@ -107,7 +107,7 @@ When the file is absent, the normalized defaults are:
 {
   "version": 1,
   "roadmap": { "provider": "file" },
-  "execution": { "provider": "session" }
+  "execution": { "provider": "session", "completion": "landed" }
 }
 ```
 
@@ -135,7 +135,16 @@ The roadmap contract supports these workflow operations:
 - render a curated completion summary;
 - identify when human-level acceptance remains unresolved.
 
-The first Plane implementation is reference-based. It accepts identifiers such as `plane:SJUP-12`; it does not claim to create, update, or synchronize the remote work item. Direct Plane API automation or a Kata connector is a later provider enhancement that must preserve this contract.
+The first Plane implementation is reference-based. A provider reference such as
+`plane:SJUP-12` identifies exactly one Plane work item in the configured
+project. It never identifies a module. Modules group a bounded initiative
+inside each project; related work-item links connect the outcome records when
+one initiative spans projects. Each project retains its own outcome work item,
+and a spec selects the single work item whose acceptance owns that repository
+change. The provider does not create, update, synchronize, or traverse the
+module or related links. Direct Plane API automation or a Kata connector is a
+later provider enhancement that must preserve this work-item reference
+contract.
 
 ### Execution provider
 
@@ -187,7 +196,17 @@ The spec remains authoritative for behavioral and architectural requirements. Ex
 
 ### Writing plans
 
-Plans define one generic `**Source:**` value copied from the approved spec: a provider-qualified Plane outcome, a file-roadmap milestone, or `none (bootstrap)`. Roadmap and execution selection remain independent, so both Plane-backed and file-backed plans may materialize into Kata. Plans also define stable task numbers. When Kata is selected, plan completion materializes one `sjujperpowers-plan` parent for the activation and one `sjujperpowers-task` child per plan task. Every child has a containment parent link and blocks the parent, which keeps automatic task selection off the root and makes the root ready only after all children close. Each child records the plan path, source, and task heading as its requirements source.
+Plans define one generic `**Source:**` value derived from the approved spec:
+a provider-qualified Plane work-item outcome is copied, a file-roadmap
+milestone is converted to a `file:`-qualified value, and `none (bootstrap)` is
+copied. Roadmap and execution selection remain independent, so both
+Plane-backed and file-backed plans may materialize into Kata. Plans also define
+stable task numbers. When Kata is selected, plan completion materializes one
+`sjujperpowers-plan` parent for the activation and one `sjujperpowers-task`
+child per plan task. Every child has a containment parent link and blocks the
+parent, which keeps automatic task selection off the root and makes the root
+ready only after all children close. Each child records the plan path, source,
+and task heading as its requirements source.
 
 The plan remains an immutable execution argument. Checkbox rendering may remain for readability, but checked state is not authoritative when Kata is configured.
 

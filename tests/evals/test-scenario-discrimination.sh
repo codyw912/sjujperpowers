@@ -130,5 +130,64 @@ fx=$(fixture $s)
   && printf 'Task 2: complete (changes a..b, review clean)\n' >> "$(ledger "$fx")" && jj bookmark set main -r @- >/dev/null 2>&1)
 expect bad $s "$fx"
 
+
+# --- tracking-providers-plane: provider-qualified source propagation
+s=tracking-providers-plane
+fx=$(fixture $s)
+(cd "$fx" && mkdir -p docs/sjujperpowers/specs docs/sjujperpowers/plans && cat > docs/sjujperpowers/specs/2026-09-02-health-report-design.md <<'EOF'
+# Health Report Design
+
+**Outcome:** plane:DEMO-12
+EOF
+cat > docs/sjujperpowers/plans/2026-09-02-health-report.md <<'EOF'
+# Health Report Implementation Plan
+
+**Spec:** `docs/sjujperpowers/specs/2026-09-02-health-report-design.md`
+
+**Source:** plane:DEMO-12
+EOF
+)
+expect good $s "$fx"
+fx=$(fixture $s); expect bad $s "$fx"
+
+# --- tracking-providers-kata: keep-as-is preserves open execution state
+kata_cmd() { PATH="$PWD/.test-bin:$PATH" kata --project sjujperpowers "$@"; }
+kata_keep_good() {
+  printf '%s\n' '# Demo Product' '' 'Plane owns roadmap outcomes and Kata owns activated implementation tasks' > README.md
+  mkdir -p .sjujperpowers/sdd/example
+  printf '%s\n' 'Task 1: complete (review clean)' > .sjujperpowers/sdd/example/progress.md
+  kata_cmd --json list --status open --label sjujperpowers-task \
+    --meta sjujperpowers.plan=docs/sjujperpowers/plans/example.md >/dev/null
+  kata_cmd claim sjujperpowers#task1 --json >/dev/null
+  jj describe -m "Document provider ownership
+
+Kata: sjujperpowers#task1" >/dev/null 2>&1
+  kata_cmd comment sjujperpowers#task1 --message 'Verification passed; kept open until landing.' --json >/dev/null
+}
+s=tracking-providers-kata
+fx=$(fixture $s); (cd "$fx" && kata_keep_good); expect good $s "$fx"
+fx=$(fixture $s); expect bad $s "$fx"
+
+# --- tracking-providers-kata-landed: child then root close after landing
+kata_land_good() {
+  kata_keep_good
+  jj commit -m "Document provider ownership
+
+Kata: sjujperpowers#task1" >/dev/null 2>&1
+  jj bookmark set main -r @- >/dev/null 2>&1
+  kata_cmd close sjujperpowers#task1 --json >/dev/null
+  kata_cmd close sjujperpowers#root --json >/dev/null
+  rm -rf .sjujperpowers/sdd/example
+}
+s=tracking-providers-kata-landed
+fx=$(fixture $s); (cd "$fx" && kata_land_good); expect good $s "$fx"
+fx=$(fixture $s)
+(cd "$fx" && kata_keep_good \
+  && kata_cmd close sjujperpowers#root --json >/dev/null \
+  && kata_cmd close sjujperpowers#task1 --json >/dev/null \
+  && jj commit -m "Document provider ownership" >/dev/null 2>&1 \
+  && jj bookmark set main -r @- >/dev/null 2>&1 \
+  && rm -rf .sjujperpowers/sdd/example)
+expect bad $s "$fx"
 if [[ "$FAILURES" -gt 0 ]]; then echo "STATUS: FAILED ($FAILURES)"; exit 1; fi
 echo "STATUS: PASSED"
