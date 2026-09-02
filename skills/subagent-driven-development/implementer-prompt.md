@@ -35,9 +35,11 @@ Subagent (general-purpose):
     1. Implement exactly what the task specifies
     2. Write tests (following TDD if task says to)
     3. Verify implementation works
-    4. Commit your work (`jj commit -m "<message>"`)
-    5. Self-review (see below)
+    4. Self-review (see below) and fix what it finds
+    5. Run the full suite once, then commit (`jj commit -m "<message>"`) — every edit you made, self-review fixes included, must be inside a described change before you report; `jj status` must show nothing left in `@`
     6. Report back
+
+    In a fix round, the same rule applies: fix, re-run the covering tests, `jj commit -m "<message>"`, then report.
 
     Work from: [directory]
 
@@ -45,7 +47,7 @@ Subagent (general-purpose):
     It's always OK to pause and clarify. Don't guess or make assumptions.
 
     While iterating, run the focused test for what you're changing; run the
-    full suite once before committing, not after every edit.
+    full suite once before the final commit, not after every edit.
 
     ## You Do Not Dispatch Subagents
 

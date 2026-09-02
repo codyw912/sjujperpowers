@@ -1,25 +1,36 @@
 #!/usr/bin/env bash
 # Print a revset that names this repo's trunk, plus the bookmark behind it.
 #
-# jj's built-in trunk() only looks at remote bookmarks and falls back to
+# jj's built-in trunk() is `latest(main@origin | main@upstream | ...)` — it
+# picks by committer timestamp, so in a fork with an `upstream` remote it
+# flips to upstream's main whenever upstream is newer. It also falls back to
 # root() in a local-only repo. Rather than requiring a config write, resolve
-# at runtime: prefer the built-in when it has a remote bookmark, otherwise
-# the local bookmark main/master/trunk. Skills substitute the printed revset
-# wherever they say trunk().
+# at runtime, in order:
+#   1. main/master/trunk on the `origin` remote   -> `main@origin main`
+#   2. the built-in trunk() if it names a bookmark -> `trunk() main`
+#   3. a local main/master/trunk bookmark          -> `main main`
+# Skills substitute the printed revset wherever they say trunk().
 #
-# Output: `<revset> <bookmark>` (e.g. `trunk() main` or `main main`).
-# Exit 1 with a message when nothing qualifies.
+# Output: `<revset> <bookmark>`. Exit 1 with a message when nothing qualifies.
 #
 # Usage: trunk-rev
 set -euo pipefail
 
-bookmarks=$(jj log -r 'trunk()' --no-graph -T 'bookmarks' 2>/dev/null || true)
-if [ -n "$bookmarks" ]; then
-  # `main@origin` → `main`; the built-in alias already names a real trunk.
-  first=${bookmarks%% *}
-  echo "trunk() ${first%%@*}"
-  exit 0
-fi
+for name in main master trunk; do
+  if [ -n "$(jj log -r "present(remote_bookmarks(exact:\"$name\", exact:\"origin\"))" --no-graph -T 'change_id.short()' 2>/dev/null)" ]; then
+    echo "$name@origin $name"
+    exit 0
+  fi
+done
+
+# Built-in trunk() names a commit; derive the bookmark only from a main/master/
+# trunk label on it — never from whatever other bookmark happens to sit there.
+for token in $(jj log -r 'trunk()' --no-graph -T 'bookmarks' 2>/dev/null || true); do
+  name=${token%%@*}; name=${name%%[*?]*}
+  case "$name" in
+    main|master|trunk) echo "trunk() $name"; exit 0 ;;
+  esac
+done
 
 for name in main master trunk; do
   if [ -n "$(jj log -r "present(bookmarks(exact:\"$name\"))" --no-graph -T 'change_id.short()' 2>/dev/null)" ]; then

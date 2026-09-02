@@ -34,15 +34,14 @@ Installation differs by harness. If you use more than one, install Sjujperpowers
 
 ### Codex (App and CLI)
 
-sjujperpowers is **not published** to the Codex plugin marketplace, so the `/plugins` search will not find it. Until it is, install the skills directly — Codex discovers skills from `~/.agents/skills/`:
+This repo is its own Codex marketplace (`.agents/plugins/marketplace.json`), so no listing on the official marketplace is needed:
 
 ```bash
-git clone https://github.com/codyw912/sjujperpowers ~/.agents/sjujperpowers
-mkdir -p ~/.agents/skills
-for s in ~/.agents/sjujperpowers/skills/*/; do ln -sfn "$s" ~/.agents/skills/"$(basename "$s")"; done
+codex plugin marketplace add codyw912/sjujperpowers   # or a local checkout path
+codex plugin add sjujperpowers@sjujperpowers-dev
 ```
 
-Update with `git -C ~/.agents/sjujperpowers pull`. The repo also carries a Codex plugin manifest (`.codex-plugin/plugin.json`) and a local marketplace (`.agents/plugins/marketplace.json`) for when it is published; `scripts/package-codex-plugin.sh` builds the archive.
+Inside a Codex session the same two steps are `/plugin marketplace add codyw912/sjujperpowers` and `/plugin install sjujperpowers@sjujperpowers-dev`. Update with `codex plugin marketplace upgrade`.
 
 ### OpenCode
 

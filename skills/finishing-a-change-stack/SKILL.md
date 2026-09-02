@@ -31,7 +31,7 @@ Tests failing (<N> failures). Must fix before completing:
 
 Runs before the stack is inspected so the edit is part of what lands. If `docs/sjujperpowers/roadmap.md` is missing, skip silently.
 
-If the plan names a milestone: add this plan's path under that milestone's `**Plans:**`. If the milestone's `**Done when:**` is now satisfied, set `**Status:** done` and ask (one question) whether the next planned milestone is still the right next step.
+If the plan names a milestone: make sure this plan's path is listed under that milestone's `**Plans:**` — writing-plans normally added it already; add it only if missing. If the milestone's `**Done when:**` is now satisfied, set `**Status:** done` and ask (one question) whether the next planned milestone is still the right next step.
 
 The edit lands in `@`; Step 3 describes it. A later discard abandons it with the rest of the stack.
 
@@ -43,7 +43,7 @@ Resolve the trunk first — jj's built-in `trunk()` only sees remote bookmarks a
 read -r TRUNK TRUNK_BOOKMARK < <(<starting-a-change skill dir>/scripts/trunk-rev)
 ```
 
-It prints `trunk() main` when a remote trunk exists, or `main main` for a local-only repo. If it fails, stop and have the user run `jj bookmark create main -r <base>`, then start Step 3 over. Use `$TRUNK` wherever this skill writes `trunk()`.
+It prints e.g. `main@origin main`, `trunk() main`, or `main main` (local-only repo). If it fails, stop and have the user run `jj bookmark create main -r <base>`, then start Step 3 over. Use `$TRUNK` wherever this skill writes `trunk()`.
 
 ```bash
 jj log -r "$TRUNK..@"
@@ -87,7 +87,7 @@ Discard is not on the menu. It happens only when the user types `discard` (see b
 
 ### Option 1: Land on trunk locally
 
-If the stack is not already based on current `$TRUNK`: `jj rebase -d "$TRUNK" -s <stack-root>`, then re-run the Step 3 conflict check and the test suite — a green run only proves the tree it ran on. If either fails, stop and investigate; nothing has moved yet.
+If the stack is not already based on current `$TRUNK`, rebase it. First list what else hangs off the stack — side changes such as the loose WIP `starting-a-change` stepped beside, or other workspaces: `jj log -r "(roots($TRUNK..@):: ~ ($TRUNK..@)) ~ (empty() & description(exact:\"\"))"`. If that prints nothing, `jj rebase -d "$TRUNK" -s <stack-root>`. If it prints something, ask one question: carry it along (`-s <stack-root>` moves it too; it stays attached to the same stack change with its own diff) or stop so the user can relocate it first. There is no "leave it behind" option — `jj rebase -r` would re-parent that work onto the old trunk and strip the stack content from its tree. Then re-run the Step 3 conflict check and the test suite — a green run only proves the tree it ran on. If either fails, stop and investigate; nothing has landed, and `jj undo` reverts the rebase.
 
 Then `jj bookmark set <trunk-bookmark> -r <head>`. No push.
 

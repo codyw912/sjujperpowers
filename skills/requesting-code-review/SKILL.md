@@ -24,10 +24,14 @@ Dispatch a code reviewer subagent to catch issues before they cascade. The revie
 ## How to Request
 
 **1. Get the range:**
+
+Record the base **before** the work starts, as a commit ID (immutable, survives rewrites):
+
 ```bash
-BASE=$(jj log -r @- --no-graph -T 'commit_id')  # or trunk(); a commit ID stays valid across rewrites
-HEAD=@
+BASE=$(jj log -r @- --no-graph -T 'commit_id')   # with @ empty, before implementing
 ```
+
+Never derive it afterwards: after `jj commit`, `@` is a fresh empty change and `@-` is the work itself, so `@-..@` is an empty diff. If you did not record it, use the trunk from the starting-a-change skill's `scripts/trunk-rev`: `BASE=$(jj log -r "$TRUNK" --no-graph -T 'commit_id')`. HEAD is always `@`.
 
 **2. Dispatch code reviewer subagent:**
 

@@ -128,6 +128,40 @@ assert_eq "$ws_tracked" "0" ".workspaces/ contents are not tracked by jj"
 set +e; (cd "$repo" && "$ADD_WS" feat >/dev/null 2>&1); dup_code=$?; set -e
 assert_eq "$dup_code" "2" "duplicate workspace name is refused"
 
+# Case 6: fork topology (origin + newer upstream). jj's built-in trunk() picks by
+# timestamp and flips to main@upstream; trunk-rev must keep main@origin.
+fw="$TEST_ROOT/fork"; mkdir -p "$fw/repo"
+git init -q --bare "$fw/origin.git"; git init -q --bare "$fw/upstream.git"
+(cd "$fw/repo" && jj git init >/dev/null 2>&1 && echo a > f && jj commit -m base >/dev/null 2>&1 \
+  && jj bookmark create main -r @- >/dev/null 2>&1 \
+  && jj git remote add origin "$fw/origin.git" && jj git remote add upstream "$fw/upstream.git" \
+  && jj git push --remote origin -b main >/dev/null 2>&1 \
+  && git -C "$fw/upstream.git" fetch -q "$fw/origin.git" main:main && jj git fetch --remote upstream >/dev/null 2>&1)
+assert_eq "$(cd "$fw/repo" && "$TRUNK_REV")" "main@origin main" "origin bookmark preferred when remotes agree"
+sleep 1
+(cd "$fw/repo" && echo fork > g && jj commit -m "fork change" >/dev/null 2>&1 && jj bookmark set main -r @- >/dev/null 2>&1 \
+  && jj git push --remote origin -b main >/dev/null 2>&1)
+sleep 1
+(cd "$fw/repo" && jj new --quiet 'main@upstream' && echo up > h && jj commit -m "newer upstream change" >/dev/null 2>&1 \
+  && jj bookmark create umain -r @- >/dev/null 2>&1 && jj git push --remote upstream -b umain >/dev/null 2>&1 \
+  && git -C "$fw/upstream.git" update-ref refs/heads/main refs/heads/umain && jj git fetch --remote upstream >/dev/null 2>&1)
+builtin="$(cd "$fw/repo" && jj log -r 'trunk()' --no-graph -T 'description.first_line()')"
+assert_eq "$builtin" "newer upstream change" "built-in trunk() flips to the newer upstream commit (the hazard)"
+tr_out="$(cd "$fw/repo" && "$TRUNK_REV")"
+assert_eq "$tr_out" "main@origin main" "trunk-rev stays on origin when upstream is newer"
+assert_eq "$(cd "$fw/repo" && jj log -r "${tr_out%% *}" --no-graph -T 'description.first_line()')" "fork change" "trunk-rev revset resolves to the fork's head"
+
+# Regression: pre-origin topology where trunk() carries an extra local label (e.g.
+# `fork-base`). The bookmark must come from a main/master/trunk label, never that one.
+pre="$TEST_ROOT/pre-origin"; mkdir -p "$pre/repo"; git init -q --bare "$pre/upstream.git"
+(cd "$pre/repo" && jj git init >/dev/null 2>&1 && echo a > f && jj commit -m base >/dev/null 2>&1 \
+  && jj bookmark create main -r @- >/dev/null 2>&1 && jj git remote add upstream "$pre/upstream.git" \
+  && jj git push --remote upstream -b main >/dev/null 2>&1 && jj bookmark create fork-base -r @- >/dev/null 2>&1 \
+  && jj bookmark untrack main@upstream >/dev/null 2>&1)
+labels="$(cd "$pre/repo" && jj log -r 'trunk()' --no-graph -T 'bookmarks')"
+[[ "$labels" == fork-base* ]] && pass "fixture: fork-base is the first label on trunk()" || fail "fixture labels unexpected: $labels"
+assert_eq "$(cd "$pre/repo" && "$TRUNK_REV")" "trunk() main" "never returns a co-located non-trunk label as the trunk bookmark"
+
 # Case 4: not a jj repo -> exit 2 with the contract message.
 plain="$TEST_ROOT/plain"; mkdir -p "$plain"
 set +e
