@@ -13,6 +13,8 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
+**REQUIRED SUB-SKILL:** Use sjujperpowers:tracking-providers before creating or editing the plan. Run its checked resolver. If execution is `kata`, a failed executable, daemon, or project preflight stops before plan mutation.
+
 **Context:** The plan is committed on the current stack by naming its file (`jj commit <plan-file> -m …` splits just that file out, leaving any loose WIP in `@`); execution then starts on a fresh change above it via `sjujperpowers:starting-a-change`, so the spec and plan stay in the working copy.
 
 **Save plans to:** `docs/sjujperpowers/plans/YYYY-MM-DD-<feature-name>.md`
@@ -69,7 +71,7 @@ independently testable deliverable.
 **Spec:** [path to the spec/design doc this plan implements — the plan
 argues from the spec, so the spec travels with it; executors read both]
 
-**Milestone:** [M<N> — <title> from docs/sjujperpowers/roadmap.md, copied from the spec; or 'none (unplanned)']
+**Source:** [copy the approved spec's source exactly: `plane:PROJ-12`, `file:M1 — <title>`, or `none (bootstrap)`]
 
 ## Global Constraints
 
@@ -80,6 +82,8 @@ include this section.]
 
 ---
 ```
+
+For a file-roadmap spec, convert `**Milestone:** M1 — Title` to `**Source:** file:M1 — Title`. For Plane and bootstrap specs, copy the value from `**Outcome:**` unchanged. This source is independent of the execution provider.
 
 ## Task Structure
 
@@ -159,7 +163,17 @@ After the self-review, commit the plan file by name — never a bare `jj commit`
 jj commit docs/sjujperpowers/plans/YYYY-MM-DD-<feature-name>.md -m "Add <feature> implementation plan"
 ```
 
-If the plan serves a roadmap milestone, include the roadmap edit (plan path under `**Plans:**`) in the same fileset: `jj commit docs/sjujperpowers/plans/<file>.md docs/sjujperpowers/roadmap.md -m …`.
+If the plan serves a `file` roadmap milestone, include the roadmap edit (plan path under `**Plans:**`) in the same fileset: `jj commit docs/sjujperpowers/plans/<file>.md docs/sjujperpowers/roadmap.md -m …`. Never edit the file roadmap for `plane` or `none`.
+
+If the resolved execution provider is `kata`, materialize only after the plan commit:
+
+```bash
+node <tracking-providers skill dir>/scripts/materialize-plan.mjs \
+  --root "$(jj root)" \
+  --plan docs/sjujperpowers/plans/YYYY-MM-DD-<feature-name>.md
+```
+
+Report the normalized parent and child refs. The command is idempotent; retry it after a partial failure instead of creating replacement issues. Plan checkboxes remain execution input and session readability, not authoritative durable state.
 
 Then offer execution choice:
 

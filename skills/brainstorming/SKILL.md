@@ -11,6 +11,8 @@ Start by classifying how much process the request needs, then work
 through your path: understand the context, refine the idea, present a
 design, and get your human partner's approval.
 
+**REQUIRED SUB-SKILL:** Use sjujperpowers:tracking-providers before the first question or versioned edit. Run its checked resolver. If execution is `kata`, a failed executable, daemon, or project preflight stops before any spec mutation.
+
 <HARD-GATE>
 Do NOT invoke any implementation skill, write any code, scaffold any
 project, or take any implementation action until you have told your
@@ -92,7 +94,7 @@ your path and complete them in order.
 5. **Implement** — proceed with the normal development workflow (TDD applies); no plan document
 
 **Architectural:**
-1. **Explore project context** — check files, docs, recent commits. If `docs/sjujperpowers/roadmap.md` exists, read it and state which milestone this work serves; if none fits, say so — either Revise the roadmap first or proceed as `Milestone: none (unplanned)` with a Decisions line explaining why. If no roadmap exists AND the request is a new project, invoke roadmapping before continuing.
+1. **Explore project context** — check files, docs, recent commits. Resolve the roadmap and execution providers first. For `file`, read `docs/sjujperpowers/roadmap.md` when present and state the milestone; if none fits, Revise first or proceed as `Milestone: none (unplanned)` with a Decisions line. For `plane`, require and state an existing `plane:<identifier>` outcome without editing the file roadmap. For `none`, state the explicit no-roadmap source. If the file provider has no roadmap AND the request is a new project, invoke roadmapping before continuing.
 2. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 3. **Propose 2-3 approaches** — with trade-offs and your recommendation
 4. **Present design** — in sections scaled to their complexity, get user approval after each section
@@ -204,8 +206,10 @@ is the whole process.
 
 - Write the validated design (spec) to `docs/sjujperpowers/specs/YYYY-MM-DD-<topic>-design.md`
   - (User preferences for spec location override this default)
-  - Header, right under the title: `**Milestone:** M<N> — <title>` (or `**Milestone:** none (unplanned)`)
-- If the spec serves a roadmap milestone, add the spec path under that milestone's `**Specs:**` and set its `**Status:**` to `active` if it was `planned` — same change as the spec
+  - For `file`, put `**Milestone:** M<N> — <title>` (or `**Milestone:** none (unplanned)`) immediately under the title.
+  - For `plane`, put the exact `**Outcome:** plane:<identifier>` immediately under the title.
+  - For `none` or bootstrap work, put `**Outcome:** none (bootstrap)` and explain why.
+- Only the `file` provider may add the spec path to `docs/sjujperpowers/roadmap.md` and move a planned milestone to `active`.
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Do not commit yet — the self-review below edits the file, and anything left uncommitted in `@` is loose WIP that `starting-a-change` steps beside, stranding the correction
 
@@ -222,10 +226,12 @@ Fix any issues inline. No need to re-review — just fix and move on.
 **Commit:** once the self-review is clean, commit by fileset so loose WIP in `@` is never swept in:
 
 ```bash
+jj commit docs/sjujperpowers/specs/<file>.md -m "Add <topic> design spec"
+# With an edited file-provider roadmap:
 jj commit docs/sjujperpowers/specs/<file>.md docs/sjujperpowers/roadmap.md -m "Add <topic> design spec"
 ```
 
-(omit the roadmap path when it was not edited). The spec is now an ancestor of `@`; every later edit to it must be committed the same way or it will not reach the implementation change.
+(include the roadmap path only for an edited `file` provider roadmap). The spec is now an ancestor of `@`; every later edit to it must be committed the same way or it will not reach the implementation change.
 
 **User Review Gate:**
 Ask the user to review the written spec before proceeding:

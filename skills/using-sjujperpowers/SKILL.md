@@ -23,6 +23,8 @@ This is not negotiable. You cannot rationalize your way out of this.
 
 Then announce "Using [skill] to [purpose]" and follow the skill exactly. If it has a checklist, create a todo per item.
 
+For roadmap, spec, plan, or execution lifecycle work, the selected process skill invokes `sjujperpowers:tracking-providers` and resolves `.sjujperpowers/config.json` before versioned or issue mutation. No configuration preserves the existing file-roadmap and session-todo workflow.
+
 ## Skill Priority
 
 When multiple skills apply, process skills come first — they set the approach, then implementation skills (frontend-design, etc.) carry it out. Brainstorming and systematic-debugging are Sjujperpowers' most common process skills, but the rule holds for any of them.
@@ -31,6 +33,7 @@ When multiple skills apply, process skills come first — they set the approach,
 - "Let's build X" → sjujperpowers:brainstorming first, then implementation skills.
 - "Where are we / what's next" → sjujperpowers:roadmapping.
 - "Fix this bug" → sjujperpowers:systematic-debugging first, then domain skills.
+- "Use Plane/Kata tracking" → the lifecycle skill, then sjujperpowers:tracking-providers before mutation.
 
 ## Red Flags
 
