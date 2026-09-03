@@ -3,7 +3,7 @@
 import { execFile as execFileCallback, spawnSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { isAbsolute, resolve } from 'node:path';
+import { posix, resolve, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
@@ -52,7 +52,7 @@ function normalizeDocsRoot(raw, configPath) {
   const docsRoot = raw.trim().replace(/\/+$/, '');
   if (
     docsRoot === '' ||
-    isAbsolute(docsRoot) ||
+    (posix.isAbsolute(docsRoot) || win32.isAbsolute(docsRoot)) ||
     docsRoot.includes('\\') ||
     docsRoot.split('/').some(segment => segment === '' || segment === '.' || segment === '..')
   ) {

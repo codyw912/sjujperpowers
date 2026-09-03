@@ -115,6 +115,8 @@ for (const [name, config, field] of [
   ['unknown root key', { version: 1, typo: true }, 'root.typo'],
   ['wrong docs root type', { version: 1, docsRoot: 3 }, 'docsRoot'],
   ['absolute docs root', { version: 1, docsRoot: '/tmp/project' }, 'docsRoot'],
+  ['Windows absolute docs root', { version: 1, docsRoot: 'C:/project' }, 'docsRoot'],
+  ['UNC docs root', { version: 1, docsRoot: '//server/share' }, 'docsRoot'],
   ['escaping docs root', { version: 1, docsRoot: '../project' }, 'docsRoot'],
   ['backslash docs root', { version: 1, docsRoot: 'docs\\project' }, 'docsRoot'],
   ['unknown roadmap provider', { version: 1, roadmap: { provider: 'jira' } }, 'roadmap.provider'],
