@@ -38,6 +38,7 @@ test('missing config preserves file and session defaults', async () => {
   assert.deepEqual(await resolveConfig(root, { runtimeCheck: false }), {
     version: 1,
     configPath: null,
+    docsRoot: 'docs/project',
     roadmap: { provider: 'file' },
     execution: { provider: 'session', completion: 'landed' },
   });
@@ -49,6 +50,7 @@ test('plane and kata configuration is normalized', () => {
     {
       version: 1,
       configPath: '/repo/.sjujperpowers/config.json',
+      docsRoot: 'docs/project',
       roadmap: { provider: 'plane', project: 'Sjujperpowers' },
       execution: {
         provider: 'kata',
@@ -72,6 +74,7 @@ test('roadmap and execution slots remain independent', () => {
     {
       version: 1,
       configPath: '/repo/.sjujperpowers/config.json',
+      docsRoot: 'docs/project',
       roadmap: { provider: 'file' },
       execution: { provider: 'kata', project: 'repo', completion: 'landed' },
     },
@@ -82,9 +85,21 @@ test('omitted provider objects receive defaults', () => {
   assert.deepEqual(normalizeConfig({ version: 1 }, '/repo/config.json'), {
     version: 1,
     configPath: '/repo/config.json',
+    docsRoot: 'docs/project',
     roadmap: { provider: 'file' },
     execution: { provider: 'session', completion: 'landed' },
   });
+});
+
+test('custom project docs root is loaded and normalized', async () => {
+  const root = await fixture({
+    version: 1,
+    docsRoot: 'engineering/project/',
+  });
+
+  const config = await resolveConfig(root, { runtimeCheck: false });
+
+  assert.equal(config.docsRoot, 'engineering/project');
 });
 
 test('malformed JSON names its file', async () => {
@@ -98,6 +113,10 @@ test('malformed JSON names its file', async () => {
 for (const [name, config, field] of [
   ['unknown version', { version: 2 }, 'version'],
   ['unknown root key', { version: 1, typo: true }, 'root.typo'],
+  ['wrong docs root type', { version: 1, docsRoot: 3 }, 'docsRoot'],
+  ['absolute docs root', { version: 1, docsRoot: '/tmp/project' }, 'docsRoot'],
+  ['escaping docs root', { version: 1, docsRoot: '../project' }, 'docsRoot'],
+  ['backslash docs root', { version: 1, docsRoot: 'docs\\project' }, 'docsRoot'],
   ['unknown roadmap provider', { version: 1, roadmap: { provider: 'jira' } }, 'roadmap.provider'],
   ['reserved linear provider', { version: 1, roadmap: { provider: 'linear', project: 'x' } }, 'roadmap.provider'],
   ['missing Plane project', { version: 1, roadmap: { provider: 'plane' } }, 'roadmap.project'],

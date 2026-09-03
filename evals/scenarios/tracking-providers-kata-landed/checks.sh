@@ -10,7 +10,7 @@ pre() {
 
 post() {
   file-contains README.md 'Plane owns roadmap outcomes and Kata owns activated implementation tasks'
-  file-contains .kata-fixture/commands.log 'list.*--label sjujperpowers-task.*--meta sjujperpowers.plan=docs/sjujperpowers/plans/example.md'
+  file-contains .kata-fixture/commands.log 'list.*--label sjujperpowers-task.*--meta sjujperpowers.plan=docs/project/plans/example.md'
   file-contains .kata-fixture/commands.log 'claim (sjujperpowers#)?task1'
   file-contains .kata-fixture/commands.log 'comment (sjujperpowers#)?task1'
   file-contains .kata-fixture/commands.log 'close (sjujperpowers#)?task1'

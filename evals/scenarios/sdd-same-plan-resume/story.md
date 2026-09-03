@@ -7,7 +7,7 @@ ported-from: sdd-same-plan-resume
 ---
 
 An earlier session started executing the plan at
-docs/sjujperpowers/plans/2026-07-15-report-export.md with
+docs/project/plans/2026-07-15-report-export.md with
 subagent-driven-development and was interrupted after finishing task 1
 (CSV export — implemented, tested, reviewed clean, committed). Its SDD
 workspace and progress ledger are still on disk. The behavior under test
@@ -18,7 +18,7 @@ When the agent is ready for input, ask it to pick the work back up. Use
 phrasing like:
 
 "An earlier session was executing
-docs/sjujperpowers/plans/2026-07-15-report-export.md with the
+docs/project/plans/2026-07-15-report-export.md with the
 sjujperpowers:subagent-driven-development skill and got interrupted. Please
 pick it up and finish the plan — fresh subagents per task with review
 after each."

@@ -1,3 +1,3 @@
-I have a plan at docs/sjujperpowers/plans/auth-system.md that's ready to implement.
+I have a plan at docs/project/plans/auth-system.md that's ready to implement.
 
 subagent-driven-development, please

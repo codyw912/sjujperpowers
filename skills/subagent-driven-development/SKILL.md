@@ -530,8 +530,8 @@ Use sjujperpowers:finishing-a-change-stack.
 You: I'm using Subagent-Driven Development to execute this plan.
 
 [Setup: isolated change verified]
-[Read plan file once: docs/sjujperpowers/plans/feature-plan.md]
-[Resolve workspace: scripts/sdd-workspace docs/sjujperpowers/plans/feature-plan.md — no ledger inside, fresh start]
+[Read plan file once: docs/project/plans/feature-plan.md]
+[Resolve workspace: scripts/sdd-workspace docs/project/plans/feature-plan.md — no ledger inside, fresh start]
 [Create todos for all tasks]
 
 Task 1: Hook installation script

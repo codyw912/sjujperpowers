@@ -2,8 +2,8 @@ pre() {
     jj-repo
     jj-bookmark-exists main
     requires-tool npm node
-    file-exists 'docs/sjujperpowers/plans/report-plan.md'
-    file-contains 'docs/sjujperpowers/plans/report-plan.md' 'ends with a single trailing newline'
+    file-exists 'docs/project/plans/report-plan.md'
+    file-contains 'docs/project/plans/report-plan.md' 'ends with a single trailing newline'
 }
 
 post() {

@@ -13,8 +13,8 @@ When the agent is ready for input, type this exact message:
 
 "Use existing Plane outcome plane:DEMO-12 to design and plan a health-report
 command. This is architectural. Save the design as
-docs/sjujperpowers/specs/2026-09-02-health-report-design.md and the plan as
-docs/sjujperpowers/plans/2026-09-02-health-report.md. Do not implement it or
+docs/project/specs/2026-09-02-health-report-design.md and the plan as
+docs/project/plans/2026-09-02-health-report.md. Do not implement it or
 change Plane."
 
 How to behave:
@@ -34,7 +34,7 @@ How to behave:
 - The agent resolves the repository's tracking configuration before writing.
 - The spec contains `**Outcome:** plane:DEMO-12`.
 - The plan contains `**Source:** plane:DEMO-12`.
-- No `docs/sjujperpowers/roadmap.md` is created.
+- No `docs/project/roadmap.md` is created.
 - The agent does not claim it created, edited, synchronized, or closed Plane
   state.
 - The agent stops after planning and does not implement the command.

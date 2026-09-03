@@ -2,7 +2,7 @@
 
 setup() {
   _init_repo "$1"
-  mkdir -p .sjujperpowers .test-bin .kata-fixture docs/sjujperpowers/specs docs/sjujperpowers/plans
+  mkdir -p .sjujperpowers .test-bin .kata-fixture docs/project/specs docs/project/plans
   cat > .sjujperpowers/config.json <<'EOF'
 {
   "version": 1,
@@ -72,8 +72,8 @@ case " $* " in
       *) printf '%s\n' 'plan recovery must filter the task label' >&2; exit 64 ;;
     esac
     case " $* " in
-      *' --meta sjujperpowers.plan=docs/sjujperpowers/plans/example.md '*)
-        printf '%s\n' '{"issues":[{"short_id":"task1","title":"Document provider ownership","status":"open","labels":["sjujperpowers-task"],"metadata":{"sjujperpowers.plan":"docs/sjujperpowers/plans/example.md","sjujperpowers.task":"1"}}]}'
+      *' --meta sjujperpowers.plan=docs/project/plans/example.md '*)
+        printf '%s\n' '{"issues":[{"short_id":"task1","title":"Document provider ownership","status":"open","labels":["sjujperpowers-task"],"metadata":{"sjujperpowers.plan":"docs/project/plans/example.md","sjujperpowers.task":"1"}}]}'
         ;;
       *) printf '%s\n' 'plan recovery must filter exact plan metadata' >&2; exit 64 ;;
     esac
@@ -164,15 +164,15 @@ EOF
 
 Provider ownership is not yet documented.
 EOF
-  cat > docs/sjujperpowers/specs/example-design.md <<'EOF'
+  cat > docs/project/specs/example-design.md <<'EOF'
 # Provider Ownership
 
 **Milestone:** M1 — Provider ownership
 EOF
-  cat > docs/sjujperpowers/plans/example.md <<'EOF'
+  cat > docs/project/plans/example.md <<'EOF'
 # Provider Ownership Implementation Plan
 
-**Spec:** `docs/sjujperpowers/specs/example-design.md`
+**Spec:** `docs/project/specs/example-design.md`
 
 **Source:** file:M1 — Provider ownership
 
@@ -185,7 +185,7 @@ EOF
   PATH="$PWD/.test-bin:$PATH" node \
     "$here/../skills/tracking-providers/scripts/materialize-plan.mjs" \
     --root "$PWD" \
-    --plan docs/sjujperpowers/plans/example.md >/dev/null
+    --plan docs/project/plans/example.md >/dev/null
   rm .kata-fixture/commands.log
   _commit "initial project"
   _bookmark_main_at_parent

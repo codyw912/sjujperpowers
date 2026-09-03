@@ -17,8 +17,9 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Context:** The plan is committed on the current stack by naming its file (`jj commit <plan-file> -m …` splits just that file out, leaving any loose WIP in `@`); execution then starts on a fresh change above it via `sjujperpowers:starting-a-change`, so the spec and plan stay in the working copy.
 
-**Save plans to:** `docs/sjujperpowers/plans/YYYY-MM-DD-<feature-name>.md`
-- (User preferences for plan location override this default)
+**Save plans to:** `<docsRoot>/plans/YYYY-MM-DD-<feature-name>.md`, using `docsRoot` from the normalized provider configuration (default `docs/project`).
+
+Every `docs/project` path below is the default; substitute the configured `docsRoot` value.
 
 ## Scope Check
 
@@ -160,24 +161,24 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 After the self-review, commit the plan file by name — never a bare `jj commit`, which would sweep unrelated working-copy changes into the plan commit:
 
 ```bash
-jj commit docs/sjujperpowers/plans/YYYY-MM-DD-<feature-name>.md -m "Add <feature> implementation plan"
+jj commit docs/project/plans/YYYY-MM-DD-<feature-name>.md -m "Add <feature> implementation plan"
 ```
 
-If the plan serves a `file` roadmap milestone, include the roadmap edit (plan path under `**Plans:**`) in the same fileset: `jj commit docs/sjujperpowers/plans/<file>.md docs/sjujperpowers/roadmap.md -m …`. Never edit the file roadmap for `plane` or `none`.
+If the plan serves a `file` roadmap milestone, include the roadmap edit (plan path under `**Plans:**`) in the same fileset: `jj commit docs/project/plans/<file>.md docs/project/roadmap.md -m …`. Never edit the file roadmap for `plane` or `none`.
 
 If the resolved execution provider is `kata`, materialize only after the plan commit:
 
 ```bash
 node <tracking-providers skill dir>/scripts/materialize-plan.mjs \
   --root "$(jj root)" \
-  --plan docs/sjujperpowers/plans/YYYY-MM-DD-<feature-name>.md
+  --plan docs/project/plans/YYYY-MM-DD-<feature-name>.md
 ```
 
 Report the normalized parent and child refs. The command is idempotent; retry it after a partial failure instead of creating replacement issues. Plan checkboxes remain execution input and session readability, not authoritative durable state.
 
 Then offer execution choice:
 
-**"Plan complete and saved to `docs/sjujperpowers/plans/<filename>.md`. Two execution options:**
+**"Plan complete and saved to `docs/project/plans/<filename>.md`. Two execution options:**
 
 **1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
 

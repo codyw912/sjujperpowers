@@ -85,6 +85,7 @@ A repository may commit `.sjujperpowers/config.json`:
 ```json
 {
   "version": 1,
+  "docsRoot": "docs/project",
   "roadmap": {
     "provider": "plane",
     "project": "Sjujperpowers"
@@ -99,6 +100,8 @@ A repository may commit `.sjujperpowers/config.json`:
 
 JSON is used because every supported harness can read it and provider scripts can validate it without adding a TOML parser. The committed file contains only non-secret project identity and policy.
 
+`docsRoot` is a repository-relative directory containing the roadmap, specs, and plans. It defaults to `docs/project` and may be overridden to fit an existing documentation layout. Validation rejects absolute paths and path traversal.
+
 Provider credentials, API endpoints, Kata daemon addresses, and machine-specific paths remain in environment variables or ignored local configuration.
 
 When the file is absent, the normalized defaults are:
@@ -106,6 +109,7 @@ When the file is absent, the normalized defaults are:
 ```json
 {
   "version": 1,
+  "docsRoot": "docs/project",
   "roadmap": { "provider": "file" },
   "execution": { "provider": "session", "completion": "landed" }
 }
@@ -121,7 +125,7 @@ Sjujperpowers exposes two semantic provider slots rather than one generic tracke
 
 Supported first-version values:
 
-- `file`: current `docs/sjujperpowers/roadmap.md` behavior.
+- `file`: `<docsRoot>/roadmap.md` behavior.
 - `plane`: external Plane outcome references with manual creation and curated roll-up.
 - `none`: no persistent roadmap requirement.
 
@@ -178,7 +182,7 @@ Roadmap and execution providers are resolved together at every workflow entry po
 
 With `file`, preserve the existing create, revise, and orient modes.
 
-With `plane`, orient and activation require a valid Plane outcome reference. The skill must not create or update `docs/sjujperpowers/roadmap.md`, because that would establish a second editable roadmap authority.
+With `plane`, orient and activation require a valid Plane outcome reference. The skill must not create or update `docs/project/roadmap.md`, because that would establish a second editable roadmap authority.
 
 With `none`, roadmapping reports that the repository has intentionally disabled persistent roadmap state and hands off to brainstorming without manufacturing a milestone.
 
@@ -315,3 +319,4 @@ Tests cover behavior rather than skill prose alone:
 - 2026-09-02 — Preserve harness todos and SDD recovery artifacts with Kata; Kata replaces only duplicated durable project-visible status.
 - 2026-09-02 — Carry a provider-neutral plan source so `file + kata` remains valid and Kata does not depend on Plane.
 - 2026-09-02 — Close Kata work only after successful landing or the explicitly configured pull-request milestone.
+- 2026-09-02 — Default project artifacts to `docs/project` and allow repositories to override the root with `docsRoot`.

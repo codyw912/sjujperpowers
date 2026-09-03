@@ -3,15 +3,17 @@
 import { execFile as execFileCallback, spawnSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 const execFile = promisify(execFileCallback);
+const DEFAULT_DOCS_ROOT = 'docs/project';
 
 const DEFAULT_CONFIG = Object.freeze({
   version: 1,
   configPath: null,
+  docsRoot: DEFAULT_DOCS_ROOT,
   roadmap: Object.freeze({ provider: 'file' }),
   execution: Object.freeze({ provider: 'session', completion: 'landed' }),
 });
@@ -39,6 +41,28 @@ function requireProject(value, configPath, field) {
     throw invalid(configPath, field, 'must be a non-empty string');
   }
   return value.trim();
+}
+
+function normalizeDocsRoot(raw, configPath) {
+  if (raw === undefined) return DEFAULT_DOCS_ROOT;
+  if (typeof raw !== 'string' || raw.trim() === '') {
+    throw invalid(configPath, 'docsRoot', 'must be a non-empty string');
+  }
+
+  const docsRoot = raw.trim().replace(/\/+$/, '');
+  if (
+    docsRoot === '' ||
+    isAbsolute(docsRoot) ||
+    docsRoot.includes('\\') ||
+    docsRoot.split('/').some(segment => segment === '' || segment === '.' || segment === '..')
+  ) {
+    throw invalid(
+      configPath,
+      'docsRoot',
+      'must be a repository-relative directory without empty, . or .. segments',
+    );
+  }
+  return docsRoot;
 }
 
 function normalizeRoadmap(raw, configPath) {
@@ -93,12 +117,13 @@ function normalizeExecution(raw, configPath) {
 
 export function normalizeConfig(raw, configPath) {
   if (!isObject(raw)) throw invalid(configPath, 'root', 'must be an object');
-  rejectUnknownKeys(raw, ['version', 'roadmap', 'execution'], configPath, 'root');
+  rejectUnknownKeys(raw, ['version', 'docsRoot', 'roadmap', 'execution'], configPath, 'root');
   if (raw.version !== 1) throw invalid(configPath, 'version', 'must equal 1');
 
   return {
     version: 1,
     configPath,
+    docsRoot: normalizeDocsRoot(raw.docsRoot, configPath),
     roadmap: normalizeRoadmap(raw.roadmap, configPath),
     execution: normalizeExecution(raw.execution, configPath),
   };

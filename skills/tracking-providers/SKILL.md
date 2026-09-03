@@ -28,6 +28,7 @@ A repository may commit `.sjujperpowers/config.json`:
 ```json
 {
   "version": 1,
+  "docsRoot": "docs/project",
   "roadmap": {
     "provider": "plane",
     "project": "Example Product"
@@ -42,11 +43,14 @@ A repository may commit `.sjujperpowers/config.json`:
 
 Credentials, service URLs, daemon addresses, and machine-specific paths belong in environment variables or ignored local configuration, never this file.
 
+`docsRoot` selects the repository-relative directory for the file roadmap, specs, and plans. It defaults to `docs/project`; set it to another repository-relative directory when the project has an established documentation layout. Absolute paths, backslashes, empty segments, and `.` or `..` segments are invalid.
+
 No file means:
 
 ```json
 {
   "version": 1,
+  "docsRoot": "docs/project",
   "roadmap": { "provider": "file" },
   "execution": { "provider": "session", "completion": "landed" }
 }
@@ -54,7 +58,7 @@ No file means:
 
 Supported roadmap providers:
 
-- `file` — `docs/sjujperpowers/roadmap.md` owns outcomes.
+- `file` — `docs/project/roadmap.md` owns outcomes.
 - `plane` — an existing `plane:<identifier>` owns the outcome; integration is reference-only.
 - `none` — no persistent roadmap authority.
 
@@ -77,7 +81,7 @@ node <tracking-providers skill dir>/scripts/resolve-config.mjs \
   --root "$(jj root)"
 ```
 
-The command prints one normalized JSON object. Skills branch on that output; they never parse the committed JSON independently.
+The command prints one normalized JSON object, including `docsRoot`. Skills branch on that output; they never parse the committed JSON independently. Every `docs/project` path below is the default: substitute the checked `docsRoot` value when configured.
 
 When execution is `kata`, checked resolution verifies, in order:
 
@@ -114,7 +118,7 @@ After a Kata-backed plan is committed, materialize it:
 ```bash
 node <tracking-providers skill dir>/scripts/materialize-plan.mjs \
   --root "$(jj root)" \
-  --plan docs/sjujperpowers/plans/YYYY-MM-DD-feature.md
+  --plan docs/project/plans/YYYY-MM-DD-feature.md
 ```
 
 The command repeats checked provider resolution before mutation, creates one containment parent plus one child per numbered plan task, and prints normalized refs. The parent is labeled `sjujperpowers-plan`; children are labeled `sjujperpowers-task`. Every child also blocks the parent, so the parent cannot become ready before all children close. Automatic selection MUST use `kata next --label sjujperpowers-task --json` and can never claim a plan root.

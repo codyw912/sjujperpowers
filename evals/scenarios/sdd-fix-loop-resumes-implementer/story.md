@@ -6,7 +6,7 @@ tags: subagent-driven-development
 ported-from: sdd-fix-loop-resumes-implementer
 ---
 
-You have a small plan at docs/sjujperpowers/plans/report-plan.md — two report
+You have a small plan at docs/project/plans/report-plan.md — two report
 formatting functions. One spec gap is planted so the gap must be handled:
 Task 2's Requirements prose mandates a trailing newline that the
 plan's implementation snippet omits and the plan's mandated tests do not
@@ -24,7 +24,7 @@ route. You are spec-aware — name the skill.
 When the agent is ready for input, tell it to execute the plan with SDD. Use
 phrasing like:
 
-"I have a small plan at docs/sjujperpowers/plans/report-plan.md — two report
+"I have a small plan at docs/project/plans/report-plan.md — two report
 formatting functions. Use the sjujperpowers:subagent-driven-development skill
 to execute it end-to-end."
 

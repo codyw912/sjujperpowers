@@ -26,6 +26,7 @@ test('resolve-config CLI runs through a symlinked skill directory', async () => 
   assert.deepEqual(JSON.parse(stdout), {
     version: 1,
     configPath: null,
+    docsRoot: 'docs/project',
     roadmap: { provider: 'file' },
     execution: { provider: 'session', completion: 'landed' },
   });

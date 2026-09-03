@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node.js ES modules and `node:test`, Markdown skills, Kata CLI v0.16.0, Jujutsu.
 
-**Spec:** `docs/sjujperpowers/specs/2026-09-02-pluggable-tracking-providers-design.md`
+**Spec:** `docs/project/specs/2026-09-02-pluggable-tracking-providers-design.md`
 
 **Milestone:** none (unplanned)
 
@@ -225,7 +225,7 @@ import { parsePlan, materializePlan } from '../../skills/tracking-providers/scri
 
 const plan = `# Provider Example Implementation Plan
 
-**Spec:** \`docs/sjujperpowers/specs/example.md\`
+**Spec:** \`docs/project/specs/example.md\`
 
 **Source:** plane:SJUP-12
 
@@ -239,7 +239,7 @@ body
 test('parsePlan extracts stable task identities', () => {
   assert.deepEqual(parsePlan(plan), {
     title: 'Provider Example',
-    spec: 'docs/sjujperpowers/specs/example.md',
+    spec: 'docs/project/specs/example.md',
     source: 'plane:SJUP-12',
     tasks: [
       { number: 1, title: 'Resolver' },
@@ -258,7 +258,7 @@ test('materialization creates one parent and one child per task with stable keys
 
   const result = await materializePlan({
     root: '/repo',
-    planPath: '/repo/docs/sjujperpowers/plans/example.md',
+    planPath: '/repo/docs/project/plans/example.md',
     markdown: plan,
     config: {
       execution: { provider: 'kata', project: 'sjujperpowers', completion: 'landed' },
@@ -276,7 +276,7 @@ test('file roadmap source materializes through Kata without Plane', async () => 
   const calls = [];
   await materializePlan({
     root: '/repo',
-    planPath: '/repo/docs/sjujperpowers/plans/file-backed.md',
+    planPath: '/repo/docs/project/plans/file-backed.md',
     markdown: plan.replace('plane:SJUP-12', 'file:M1 — Provider framework'),
     config: {
       roadmap: { provider: 'file' },
@@ -344,7 +344,7 @@ Run:
 node --test tests/tracking-providers/test-materialize-plan.mjs
 node skills/tracking-providers/scripts/materialize-plan.mjs \
   --root . \
-  --plan docs/sjujperpowers/plans/2026-09-02-pluggable-tracking-providers.md
+  --plan docs/project/plans/2026-09-02-pluggable-tracking-providers.md
 ```
 
 Expected: tests PASS; CLI exits `1` with `execution.provider must be kata` because bootstrap still uses defaults and therefore cannot accidentally create local Kata issues.
@@ -391,7 +391,7 @@ Create an eval scenario whose fixture contains:
 The story asks the agent to orient and design work for existing outcome `plane:SJUP-12`. The deterministic `post.sh` must pass only when:
 
 - the produced spec contains `**Outcome:** plane:SJUP-12`;
-- no `docs/sjujperpowers/roadmap.md` was created or modified;
+- no `docs/project/roadmap.md` was created or modified;
 - the produced plan contains `**Source:** plane:SJUP-12`;
 - the agent did not claim it created or updated Plane state.
 
@@ -413,7 +413,7 @@ Expected: post check FAIL before an agent session creates the required spec/plan
 In `skills/roadmapping/SKILL.md`, add a first step that runs the checked tracking resolver before any roadmap/spec handoff mutation. If execution is `kata`, resolver success proves the executable, daemon, and configured project. Then branch on the independent roadmap provider:
 
 ```text
-file  -> preserve Create, Revise, and Orient against docs/sjujperpowers/roadmap.md
+file  -> preserve Create, Revise, and Orient against docs/project/roadmap.md
 plane -> require an existing plane:<identifier> reference; never write the file roadmap
 none  -> report persistent roadmap state intentionally disabled and hand off
 ```
@@ -433,7 +433,7 @@ In `skills/writing-plans/SKILL.md`, run the checked resolver before creating or 
 ```bash
 node <tracking-providers skill dir>/scripts/materialize-plan.mjs \
   --root "$(jj root)" \
-  --plan docs/sjujperpowers/plans/YYYY-MM-DD-<feature-name>.md
+  --plan docs/project/plans/YYYY-MM-DD-<feature-name>.md
 ```
 
 - report the normalized parent and child refs;

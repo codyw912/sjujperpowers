@@ -55,8 +55,8 @@ EOF
 # into the stack or abandoning it silently.
 create_finishing_stack_with_loose_plan() { # <dir>
   create_finishing_stack "$1"
-  mkdir -p docs/sjujperpowers/plans
-  cat > docs/sjujperpowers/plans/2026-08-04-csv-export-rollout.md <<'EOF'
+  mkdir -p docs/project/plans
+  cat > docs/project/plans/2026-08-04-csv-export-rollout.md <<'EOF'
 # CSV Export Rollout Plan
 
 **Milestone:** none (unplanned)
@@ -110,8 +110,8 @@ create_sdd_report_plan() { # <dir>
   }
 }
 EOF
-  mkdir -p docs/sjujperpowers/plans
-  cat > docs/sjujperpowers/plans/report-plan.md <<'EOF'
+  mkdir -p docs/project/plans
+  cat > docs/project/plans/report-plan.md <<'EOF'
 # Report Formatter — Implementation Plan
 
 Two report formatting functions. Implement exactly what each task
@@ -204,7 +204,7 @@ create_sdd_midloop_round1() { # <dir>
   local scripts plan_rel base_change task1_change task2_change round1_change
   local task2_commit round1_commit
   scripts=$(_sdd_scripts)
-  plan_rel=docs/sjujperpowers/plans/metrics-plan.md
+  plan_rel=docs/project/plans/metrics-plan.md
 
   cat > package.json <<'EOF'
 {
@@ -216,7 +216,7 @@ create_sdd_midloop_round1() { # <dir>
   }
 }
 EOF
-  mkdir -p docs/sjujperpowers/plans
+  mkdir -p docs/project/plans
   cat > "$plan_rel" <<'EOF'
 # Metrics Formatter — Implementation Plan
 
@@ -419,8 +419,8 @@ create_sdd_same_plan_resume() { # <dir>
   }
 }
 EOF
-  mkdir -p docs/sjujperpowers/plans
-  cat > docs/sjujperpowers/plans/2026-07-15-report-export.md <<'EOF'
+  mkdir -p docs/project/plans
+  cat > docs/project/plans/2026-07-15-report-export.md <<'EOF'
 # Report Export — Implementation Plan
 
 Two small export modules. Implement exactly what each task specifies.
@@ -501,7 +501,7 @@ EOF
   _sdd_gitignore
   mkdir -p .sjujperpowers/sdd/2026-07-15-report-export
   cat > .sjujperpowers/sdd/2026-07-15-report-export/progress.md <<EOF
-# SDD ledger — plan: docs/sjujperpowers/plans/2026-07-15-report-export.md
+# SDD ledger — plan: docs/project/plans/2026-07-15-report-export.md
 Task 1: complete (changes ${base_change}..${head_change}, review clean)
 EOF
 }

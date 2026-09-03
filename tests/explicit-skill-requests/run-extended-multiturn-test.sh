@@ -12,7 +12,7 @@ OUTPUT_DIR="/tmp/sjujperpowers-tests/${TIMESTAMP}/explicit-skill-requests/extend
 mkdir -p "$OUTPUT_DIR"
 
 PROJECT_DIR="$OUTPUT_DIR/project"
-mkdir -p "$PROJECT_DIR/docs/sjujperpowers/plans"
+mkdir -p "$PROJECT_DIR/docs/project/plans"
 
 echo "=== Extended Multi-Turn Test ==="
 echo "Output dir: $OUTPUT_DIR"

@@ -41,11 +41,11 @@ set +e; (cd "$nobm" && "$TRUNK_REV" >/dev/null 2>&1); tr_code=$?; set -e
 assert_eq "$tr_code" "1" "trunk-rev fails when neither remote nor local trunk exists"
 warn="$(cd "$nobm" && "$FRESH" 2>&1 >/dev/null)"
 [[ "$warn" == *"no trunk found"* ]] && pass "fresh-change warns when no trunk exists" || fail "missing no-trunk warning: $warn"
-(cd "$repo" && mkdir -p docs/sjujperpowers/specs && echo spec > docs/sjujperpowers/specs/x-design.md \
+(cd "$repo" && mkdir -p docs/project/specs && echo spec > docs/project/specs/x-design.md \
   && jj commit -m "Add x design spec" >/dev/null 2>&1)
 out="$(cd "$repo" && "$FRESH")"
 assert_eq "${out#* }" "reused" "empty undescribed @ above a spec commit is reused"
-[[ -f "$repo/docs/sjujperpowers/specs/x-design.md" ]] && pass "spec stays in the working copy" || fail "spec lost from working copy"
+[[ -f "$repo/docs/project/specs/x-design.md" ]] && pass "spec stays in the working copy" || fail "spec lost from working copy"
 stack="$(cd "$repo" && jj --config 'revset-aliases."trunk()"=main' log -r 'trunk()..@ & ~empty()' --no-graph -T 'description.first_line() ++ "\n"')"
 assert_eq "$stack" "Add x design spec" "stack on trunk keeps the spec commit"
 
@@ -74,25 +74,25 @@ assert_eq "$wip_files" "wip.txt" "WIP change still holds exactly its file"
 # Case 3b: the artifact protocol — WIP already in @, spec+plan committed BY FILESET
 # (as brainstorming/writing-plans do), then fresh-change. WIP must stay out of both.
 repo="$(make_repo fileset-protocol)"
-(cd "$repo" && echo scratch > wip.txt && mkdir -p docs/sjujperpowers/specs docs/sjujperpowers/plans \
-  && echo spec > docs/sjujperpowers/specs/y-design.md \
-  && jj commit docs/sjujperpowers/specs/y-design.md -m "Add y design spec" >/dev/null 2>&1 \
-  && echo plan > docs/sjujperpowers/plans/y.md \
-  && jj commit docs/sjujperpowers/plans/y.md -m "Add y implementation plan" >/dev/null 2>&1)
+(cd "$repo" && echo scratch > wip.txt && mkdir -p docs/project/specs docs/project/plans \
+  && echo spec > docs/project/specs/y-design.md \
+  && jj commit docs/project/specs/y-design.md -m "Add y design spec" >/dev/null 2>&1 \
+  && echo plan > docs/project/plans/y.md \
+  && jj commit docs/project/plans/y.md -m "Add y implementation plan" >/dev/null 2>&1)
 spec_files="$(cd "$repo" && jj diff -r 'description(exact:"Add y design spec\n")' --name-only)"
-assert_eq "$spec_files" "docs/sjujperpowers/specs/y-design.md" "fileset commit holds only the spec"
+assert_eq "$spec_files" "docs/project/specs/y-design.md" "fileset commit holds only the spec"
 out="$(cd "$repo" && "$FRESH")"
 read -r _ mode _ <<<"$out"
 assert_eq "$mode" "new-beside-wip" "WIP survives two fileset commits and is stepped beside"
-[[ -f "$repo/docs/sjujperpowers/plans/y.md" && -f "$repo/docs/sjujperpowers/specs/y-design.md" ]] \
+[[ -f "$repo/docs/project/plans/y.md" && -f "$repo/docs/project/specs/y-design.md" ]] \
   && pass "spec and plan are in the implementation working copy" || fail "spec/plan missing from working copy"
 [[ ! -f "$repo/wip.txt" ]] && pass "WIP not absorbed by the artifact protocol" || fail "WIP leaked into implementation change"
 
 # Case 3c: a self-review correction made AFTER the spec commit is stranded unless it is
 # re-committed by fileset (brainstorming's "re-commit after any revision" rule).
-spec=docs/sjujperpowers/specs/z-design.md
+spec=docs/project/specs/z-design.md
 repo="$(make_repo review-correction)"
-(cd "$repo" && echo scratch > wip.txt && mkdir -p docs/sjujperpowers/specs \
+(cd "$repo" && echo scratch > wip.txt && mkdir -p docs/project/specs \
   && printf 'spec\nTBD\n' > "$spec" && jj commit "$spec" -m "Add z design spec" >/dev/null 2>&1 \
   && printf 'spec\nresolved\n' > "$spec")
 stranded="$(cd "$repo" && jj new --quiet '@-' && cat "$spec")"

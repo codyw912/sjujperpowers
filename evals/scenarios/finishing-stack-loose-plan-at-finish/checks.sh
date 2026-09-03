@@ -1,4 +1,4 @@
-PLAN='docs/sjujperpowers/plans/2026-08-04-csv-export-rollout.md'
+PLAN='docs/project/plans/2026-08-04-csv-export-rollout.md'
 
 pre() {
     jj-repo

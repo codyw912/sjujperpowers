@@ -61,7 +61,7 @@ HEAD=@
 
 [Dispatch code reviewer subagent]
   DESCRIPTION: Added verifyIndex() and repairIndex() with 4 issue types
-  PLAN_OR_REQUIREMENTS: Task 2 from docs/sjujperpowers/plans/deployment-plan.md
+  PLAN_OR_REQUIREMENTS: Task 2 from docs/project/plans/deployment-plan.md
   BASE: 3f0c9e1d2b7a
   HEAD: @
 

@@ -119,10 +119,13 @@ The roadmap and execution slots are independent: `file + kata` and `plane + sess
 ```json
 {
   "version": 1,
+  "docsRoot": "docs/project",
   "roadmap": { "provider": "file" },
   "execution": { "provider": "session" }
 }
 ```
+
+`docsRoot` controls the repository-relative root for the roadmap, specs, and plans. It defaults to `docs/project`; set it in the same file, for example to `"engineering/project"`, to match an existing documentation layout.
 
 A Plane roadmap with Kata execution:
 
@@ -157,7 +160,7 @@ Use one Plane workspace as the portfolio boundary and projects as product or rep
 
 Use one Kata project per repository. Kata owns activated implementation tasks and evidence. A terminal multiplexer or workspace manager only groups user-interface sessions; a Jujutsu workspace is a separate working copy for a concurrent code change. They are not interchangeable.
 
-Kata-backed plans label roots and executable children separately, and children block root completion. See the [provider design](docs/sjujperpowers/specs/2026-09-02-pluggable-tracking-providers-design.md) and [`tracking-providers` skill](skills/tracking-providers/SKILL.md) for the lifecycle and failure contracts.
+Kata-backed plans label roots and executable children separately, and children block root completion. See the [provider design](docs/project/specs/2026-09-02-pluggable-tracking-providers-design.md) and [`tracking-providers` skill](skills/tracking-providers/SKILL.md) for the lifecycle and failure contracts.
 
 ## What's inside
 

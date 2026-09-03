@@ -7,7 +7,7 @@ ported-from: sdd-re-review-scoped
 ---
 
 You are resuming an interrupted SDD session. The repo has a three-task plan
-at docs/sjujperpowers/plans/metrics-plan.md, mid-execution: Task 1 is
+at docs/project/plans/metrics-plan.md, mid-execution: Task 1 is
 complete, Task 2 ran one fix round that resolved one review finding and
 left two Important findings open — unnamed magic numbers in formatDuration
 (3600 and 60, with no named constants) and a formatting expression repeated
@@ -27,7 +27,7 @@ You are spec-aware — name the skill.
 Tell the agent:
 
 "I had to restart our session. We were executing
-docs/sjujperpowers/plans/metrics-plan.md with the
+docs/project/plans/metrics-plan.md with the
 sjujperpowers:subagent-driven-development skill — the progress ledger is at
 .sjujperpowers/sdd/metrics-plan/progress.md. Pick up where we left off and finish the
 plan."

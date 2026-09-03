@@ -37,7 +37,9 @@ Tests failing (<N> failures). Must fix before completing:
 
 Branch on the resolved roadmap provider:
 
-- `file`: if `docs/sjujperpowers/roadmap.md` is absent, skip. Otherwise ensure the plan path appears under its source milestone. If that milestone's `**Done when:**` is satisfied, set `**Status:** done` and ask one question whether the next planned milestone is still correct.
+For the `file` provider, use `docsRoot` from the normalized configuration for the roadmap path. `docs/project` below is only the default.
+
+- `file`: if `docs/project/roadmap.md` is absent, skip. Otherwise ensure the plan path appears under its source milestone. If that milestone's `**Done when:**` is satisfied, set `**Status:** done` and ask one question whether the next planned milestone is still correct.
 - `plane`: do not edit the file roadmap or mutate Plane. Prepare a curated roll-up containing accepted scope, issue refs, verification, and the eventual completion result.
 - `none`: skip roadmap mutation.
 

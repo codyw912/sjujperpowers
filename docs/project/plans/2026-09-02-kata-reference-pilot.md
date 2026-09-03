@@ -1,6 +1,6 @@
 # Kata Reference Pilot Implementation Plan
 
-**Spec:** `docs/sjujperpowers/specs/2026-09-02-kata-reference-pilot-design.md`
+**Spec:** `docs/project/specs/2026-09-02-kata-reference-pilot-design.md`
 
 **Source:** plane:SJUP-1
 

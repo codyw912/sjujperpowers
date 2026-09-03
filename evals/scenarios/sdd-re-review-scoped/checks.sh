@@ -2,9 +2,9 @@ pre() {
     jj-repo
     jj-bookmark-exists main
     requires-tool npm node
-    file-exists 'docs/sjujperpowers/plans/metrics-plan.md'
+    file-exists 'docs/project/plans/metrics-plan.md'
     file-exists '.sjujperpowers/sdd/metrics-plan/progress.md'
-    file-contains '.sjujperpowers/sdd/metrics-plan/progress.md' '^# SDD ledger — plan: docs/sjujperpowers/plans/metrics-plan.md'
+    file-contains '.sjujperpowers/sdd/metrics-plan/progress.md' '^# SDD ledger — plan: docs/project/plans/metrics-plan.md'
     file-contains '.sjujperpowers/sdd/metrics-plan/progress.md' 'fix round 1/5'
     not file-contains '.sjujperpowers/sdd/metrics-plan/progress.md' 'fix round 2'
     file-exists '.sjujperpowers/sdd/metrics-plan/task-2-brief.md'

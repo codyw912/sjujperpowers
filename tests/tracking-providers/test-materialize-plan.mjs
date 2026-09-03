@@ -8,7 +8,7 @@ import {
 
 const plan = `# Provider Example Implementation Plan
 
-**Spec:** \`docs/sjujperpowers/specs/example.md\`
+**Spec:** \`docs/project/specs/example.md\`
 
 **Source:** plane:SJUP-12
 
@@ -47,7 +47,7 @@ function fakeKata(calls, overrides = {}) {
 test('parsePlan extracts a provider-neutral source and stable tasks', () => {
   assert.deepEqual(parsePlan(plan), {
     title: 'Provider Example',
-    spec: 'docs/sjujperpowers/specs/example.md',
+    spec: 'docs/project/specs/example.md',
     source: 'plane:SJUP-12',
     tasks: [
       { number: 1, title: 'Resolver' },
@@ -74,7 +74,7 @@ test('materialization creates one parent and one child per task', async () => {
   const calls = [];
   const result = await materializePlan({
     root: '/repo',
-    planPath: '/repo/docs/sjujperpowers/plans/example.md',
+    planPath: '/repo/docs/project/plans/example.md',
     markdown: plan,
     config: kataConfig(),
     runKata: fakeKata(calls),
@@ -107,7 +107,7 @@ test('file roadmap source materializes through Kata without Plane', async () => 
 
   await materializePlan({
     root: '/repo',
-    planPath: '/repo/docs/sjujperpowers/plans/file-backed.md',
+    planPath: '/repo/docs/project/plans/file-backed.md',
     markdown: filePlan,
     config: kataConfig({ provider: 'file' }),
     runKata: fakeKata(calls),
@@ -125,7 +125,7 @@ test('idempotent replay is normalized as not created', async () => {
   const calls = [];
   const result = await materializePlan({
     root: '/repo',
-    planPath: '/repo/docs/sjujperpowers/plans/example.md',
+    planPath: '/repo/docs/project/plans/example.md',
     markdown: plan,
     config: kataConfig(),
     runKata: fakeKata(calls, { response: { reused: true, changed: false } }),
@@ -137,7 +137,7 @@ test('idempotent replay is normalized as not created', async () => {
 
 for (const [name, markdown, message] of [
   ['missing title', plan.replace('# Provider Example Implementation Plan', '# Provider Example'), 'implementation-plan title'],
-  ['missing spec', plan.replace('**Spec:** `docs/sjujperpowers/specs/example.md`\n\n', ''), 'Spec header'],
+  ['missing spec', plan.replace('**Spec:** `docs/project/specs/example.md`\n\n', ''), 'Spec header'],
   ['missing source', plan.replace('**Source:** plane:SJUP-12\n\n', ''), 'Source header'],
   ['missing tasks', plan.replace(/^### Task[\s\S]*$/m, ''), 'at least one Task heading'],
   ['duplicate tasks', plan.replace('### Task 2:', '### Task 1:'), 'task numbers must be exactly 1, 2, ...'],

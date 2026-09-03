@@ -15,9 +15,9 @@ jj's built-in `trunk()` only sees remote bookmarks and is `root()` in a local-on
 ## Tracking and artifact layout
 
 - Provider policy: `.sjujperpowers/config.json` when repository defaults are overridden
-- File roadmap: `docs/sjujperpowers/roadmap.md`
-- Specs: `docs/sjujperpowers/specs/YYYY-MM-DD-<topic>-design.md`
-- Plans: `docs/sjujperpowers/plans/YYYY-MM-DD-<feature>.md`
+- File roadmap: `docs/project/roadmap.md`
+- Specs: `docs/project/specs/YYYY-MM-DD-<topic>-design.md`
+- Plans: `docs/project/plans/YYYY-MM-DD-<feature>.md`
 
 Roadmap and execution providers are independent. Absent configuration preserves `file` roadmap plus `session` execution. File-roadmap specs carry `**Milestone:** M<N> — <title>` or `**Milestone:** none (unplanned)`; Plane-backed specs carry `**Outcome:** plane:<identifier>`; bootstrap/none specs carry `**Outcome:** none (bootstrap)`. Every plan carries a provider-neutral `**Source:**` copied or derived from that approved spec (`file:…`, `plane:…`, or `none (bootstrap)`).
 

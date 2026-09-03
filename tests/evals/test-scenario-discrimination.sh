@@ -134,16 +134,16 @@ expect bad $s "$fx"
 # --- tracking-providers-plane: provider-qualified source propagation
 plane_provider_outcome() {
   local source=$1
-  mkdir -p docs/sjujperpowers/specs docs/sjujperpowers/plans
-  cat > docs/sjujperpowers/specs/2026-09-02-health-report-design.md <<'EOF'
+  mkdir -p docs/project/specs docs/project/plans
+  cat > docs/project/specs/2026-09-02-health-report-design.md <<'EOF'
 # Health Report Design
 
 **Outcome:** plane:DEMO-12
 EOF
-  cat > docs/sjujperpowers/plans/2026-09-02-health-report.md <<EOF
+  cat > docs/project/plans/2026-09-02-health-report.md <<EOF
 # Health Report Implementation Plan
 
-**Spec:** \`docs/sjujperpowers/specs/2026-09-02-health-report-design.md\`
+**Spec:** \`docs/project/specs/2026-09-02-health-report-design.md\`
 
 **Source:** $source
 EOF
@@ -159,7 +159,7 @@ kata_keep_good() {
   mkdir -p .sjujperpowers/sdd/example
   printf '%s\n' 'Task 1: complete (review clean)' > .sjujperpowers/sdd/example/progress.md
   kata_cmd --json list --status open --label sjujperpowers-task \
-    --meta sjujperpowers.plan=docs/sjujperpowers/plans/example.md >/dev/null
+    --meta sjujperpowers.plan=docs/project/plans/example.md >/dev/null
   kata_cmd claim sjujperpowers#task1 --json >/dev/null
   jj describe -m "Document provider ownership
 

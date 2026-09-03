@@ -14,7 +14,7 @@ command that may resolve or invoke Kata.
 When the agent is ready for input, type this exact message:
 
 "Use subagent-driven development to execute
-docs/sjujperpowers/plans/example.md. Recover and start its first incomplete
+docs/project/plans/example.md. Recover and start its first incomplete
 Kata child. Document in README.md that Plane owns roadmap outcomes and Kata
 owns activated implementation tasks. Verify the exact text is present, then
 finish the change and choose keep-as-is."

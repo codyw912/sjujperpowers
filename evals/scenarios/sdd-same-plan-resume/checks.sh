@@ -2,7 +2,7 @@ pre() {
     jj-repo
     jj-bookmark-exists main
     requires-tool npm node
-    file-exists 'docs/sjujperpowers/plans/2026-07-15-report-export.md'
+    file-exists 'docs/project/plans/2026-07-15-report-export.md'
     file-exists '.sjujperpowers/sdd/2026-07-15-report-export/progress.md'
     file-contains '.sjujperpowers/sdd/2026-07-15-report-export/progress.md' 'SDD ledger'
     file-contains '.sjujperpowers/sdd/2026-07-15-report-export/progress.md' 'Task 1: complete'

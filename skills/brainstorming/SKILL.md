@@ -93,12 +93,14 @@ your path and complete them in order.
 4. **Get approval** — STOP and wait for an explicit yes; presenting the design and starting in the same breath is skipping the gate
 5. **Implement** — proceed with the normal development workflow (TDD applies); no plan document
 
+For architectural work, use `docsRoot` from the checked provider configuration for every roadmap, spec, and plan path below. `docs/project` is only the default.
+
 **Architectural:**
-1. **Explore project context** — check files, docs, recent commits. Resolve the roadmap and execution providers first. For `file`, read `docs/sjujperpowers/roadmap.md` when present and state the milestone; if none fits, Revise first or proceed as `Milestone: none (unplanned)` with a Decisions line. For `plane`, require and state an existing `plane:<identifier>` outcome without editing the file roadmap. For `none`, state the explicit no-roadmap source. If the file provider has no roadmap AND the request is a new project, invoke roadmapping before continuing.
+1. **Explore project context** — check files, docs, recent commits. Resolve the roadmap and execution providers first. For `file`, read `docs/project/roadmap.md` when present and state the milestone; if none fits, Revise first or proceed as `Milestone: none (unplanned)` with a Decisions line. For `plane`, require and state an existing `plane:<identifier>` outcome without editing the file roadmap. For `none`, state the explicit no-roadmap source. If the file provider has no roadmap AND the request is a new project, invoke roadmapping before continuing.
 2. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 3. **Propose 2-3 approaches** — with trade-offs and your recommendation
 4. **Present design** — in sections scaled to their complexity, get user approval after each section
-5. **Write design doc** — save to `docs/sjujperpowers/specs/YYYY-MM-DD-<topic>-design.md`
+5. **Write design doc** — save to `docs/project/specs/YYYY-MM-DD-<topic>-design.md`
 6. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below), then commit the spec by fileset
 7. **User reviews written spec** — ask user to review the spec file before proceeding; re-commit after any revision
 8. **Transition to implementation** — invoke writing-plans skill to create implementation plan
@@ -204,12 +206,12 @@ is the whole process.
 
 **Documentation:**
 
-- Write the validated design (spec) to `docs/sjujperpowers/specs/YYYY-MM-DD-<topic>-design.md`
+- Write the validated design (spec) to `docs/project/specs/YYYY-MM-DD-<topic>-design.md`
   - (User preferences for spec location override this default)
   - For `file`, put `**Milestone:** M<N> — <title>` (or `**Milestone:** none (unplanned)`) immediately under the title.
   - For `plane`, put the exact `**Outcome:** plane:<identifier>` immediately under the title.
   - For `none` or bootstrap work, put `**Outcome:** none (bootstrap)` and explain why.
-- Only the `file` provider may add the spec path to `docs/sjujperpowers/roadmap.md` and move a planned milestone to `active`.
+- Only the `file` provider may add the spec path to `docs/project/roadmap.md` and move a planned milestone to `active`.
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Do not commit yet — the self-review below edits the file, and anything left uncommitted in `@` is loose WIP that `starting-a-change` steps beside, stranding the correction
 
@@ -226,9 +228,9 @@ Fix any issues inline. No need to re-review — just fix and move on.
 **Commit:** once the self-review is clean, commit by fileset so loose WIP in `@` is never swept in:
 
 ```bash
-jj commit docs/sjujperpowers/specs/<file>.md -m "Add <topic> design spec"
+jj commit docs/project/specs/<file>.md -m "Add <topic> design spec"
 # With an edited file-provider roadmap:
-jj commit docs/sjujperpowers/specs/<file>.md docs/sjujperpowers/roadmap.md -m "Add <topic> design spec"
+jj commit docs/project/specs/<file>.md docs/project/roadmap.md -m "Add <topic> design spec"
 ```
 
 (include the roadmap path only for an edited `file` provider roadmap). The spec is now an ancestor of `@`; every later edit to it must be committed the same way or it will not reach the implementation change.
@@ -238,7 +240,7 @@ Ask the user to review the written spec before proceeding:
 
 > "Spec written and committed to `<path>`. Please review it and let me know if you want to make any changes before we start writing out the implementation plan."
 
-Wait for the user's response. If they request changes, make them, re-run the spec review loop, and re-commit the fileset (`jj commit docs/sjujperpowers/specs/<file>.md -m "Revise <topic> design spec"`). Only proceed once the user approves.
+Wait for the user's response. If they request changes, make them, re-run the spec review loop, and re-commit the fileset (`jj commit docs/project/specs/<file>.md -m "Revise <topic> design spec"`). Only proceed once the user approves.
 
 **Implementation:**
 
