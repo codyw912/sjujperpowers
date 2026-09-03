@@ -13,7 +13,7 @@ Oh My Pi ships the tools Pi core leaves optional, so skills map directly:
 
 | Action skills request | Oh My Pi equivalent |
 | --- | --- |
-| Read a skill | `read skill://<name>` — the harness already requires this before acting; the bootstrap extension is redundant there and harmless |
+| Read a skill | `read skill://<name>` — the harness already requires this before acting, so no startup bootstrap is required |
 | Dispatch a subagent (`Subagent (general-purpose):` template) | `task` with `tasks[]`; pick `agent` by role (`scout` for read-only research, `reviewer` for reviews, omit for implementers) |
 | Resume a live subagent (SDD fix rounds 1-3) | `hub` `send` to the agent id from the dispatch result |
 | Wait on dispatched subagents | `hub` `wait` — bounded, never a polling loop |
