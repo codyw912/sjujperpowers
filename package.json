@@ -17,6 +17,11 @@
     "jujutsu",
     "jj"
   ],
+  "omp": {
+    "extensions": [
+      "./.omp/extensions/sjujperpowers.ts"
+    ]
+  },
   "pi": {
     "extensions": [
       "./.pi/extensions/sjujperpowers.ts"

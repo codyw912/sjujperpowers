@@ -53,9 +53,26 @@ Inside a Codex session the same two steps are `/plugin marketplace add codyw912/
 
 - Detailed docs: [docs/README.opencode.md](docs/README.opencode.md)
 
-### Pi and Oh My Pi
+### Oh My Pi
 
-Install Sjujperpowers as a Pi package from this repository:
+Install Sjujperpowers through Oh My Pi's plugin manager:
+
+```bash
+omp plugin install github:codyw912/sjujperpowers
+```
+
+For local development, link a checkout:
+
+```bash
+omp plugin link /path/to/sjujperpowers
+```
+
+The OMP package registers all bundled skills without loading Pi's bootstrap
+extension. OMP loads applicable skills natively through `skill://<name>`.
+
+### Pi
+
+Install Sjujperpowers as a Pi package:
 
 ```bash
 pi install git:github.com/codyw912/sjujperpowers
@@ -67,9 +84,12 @@ For local development, run Pi with this checkout loaded as a temporary package:
 pi -e /path/to/sjujperpowers
 ```
 
-The Pi package loads the Sjujperpowers skills and a small extension that injects the `using-sjujperpowers` bootstrap at session startup and again after compaction. Pi has native skills, so no compatibility `Skill` tool is required. Subagent and task-list tools remain optional Pi companion packages.
+The Pi package loads the Sjujperpowers skills and a small extension that injects
+the `using-sjujperpowers` bootstrap at session startup and again after
+compaction. Pi has native skills, so no compatibility `Skill` tool is required.
+Subagent and task-list tools remain optional Pi companion packages.
 
-Oh My Pi loads `skill://<name>` from SKILL.md natively, so no bootstrap hook is required — installing the package still makes the skills discoverable.
+For reproducible installs, append `#<tag-or-full-commit>` to either Git source.
 
 ## The workflow
 

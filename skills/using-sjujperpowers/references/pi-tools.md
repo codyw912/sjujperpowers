@@ -4,6 +4,11 @@ Skills speak in actions ("dispatch a subagent", "create a todo", "read a file").
 
 ## Oh My Pi
 
+Skill instructions use Claude-style identifiers such as
+`sjujperpowers:tracking-providers`. In OMP, translate every
+`sjujperpowers:<name>` reference to `skill://<name>`. Do not include the
+`sjujperpowers:` namespace in an OMP skill URI.
+
 Oh My Pi ships the tools Pi core leaves optional, so skills map directly:
 
 | Action skills request | Oh My Pi equivalent |
