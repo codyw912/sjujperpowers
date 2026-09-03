@@ -43,7 +43,7 @@ A repository may commit `.sjujperpowers/config.json`:
 
 Credentials, service URLs, daemon addresses, and machine-specific paths belong in environment variables or ignored local configuration, never this file.
 
-`docsRoot` selects the repository-relative directory for the file roadmap, specs, and plans. It defaults to `docs/project`; set it to another repository-relative directory when the project has an established documentation layout. Absolute paths, backslashes, empty segments, and `.` or `..` segments are invalid.
+`docsRoot` selects the repository-relative directory for the file roadmap, specs, and plans. It defaults to `docs/project`; set it to another repository-relative directory when the project has an established documentation layout. Trailing slashes are normalized away. Absolute or drive-qualified paths, backslashes, internal empty segments, and `.` or `..` segments are invalid.
 
 No file means:
 

@@ -116,6 +116,8 @@ for (const [name, config, field] of [
   ['wrong docs root type', { version: 1, docsRoot: 3 }, 'docsRoot'],
   ['absolute docs root', { version: 1, docsRoot: '/tmp/project' }, 'docsRoot'],
   ['Windows absolute docs root', { version: 1, docsRoot: 'C:/project' }, 'docsRoot'],
+  ['Windows drive-relative docs root', { version: 1, docsRoot: 'C:project' }, 'docsRoot'],
+  ['Windows bare drive docs root', { version: 1, docsRoot: 'C:' }, 'docsRoot'],
   ['UNC docs root', { version: 1, docsRoot: '//server/share' }, 'docsRoot'],
   ['escaping docs root', { version: 1, docsRoot: '../project' }, 'docsRoot'],
   ['backslash docs root', { version: 1, docsRoot: 'docs\\project' }, 'docsRoot'],

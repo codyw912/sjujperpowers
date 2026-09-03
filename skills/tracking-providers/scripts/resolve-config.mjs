@@ -52,14 +52,14 @@ function normalizeDocsRoot(raw, configPath) {
   const docsRoot = raw.trim().replace(/\/+$/, '');
   if (
     docsRoot === '' ||
-    (posix.isAbsolute(docsRoot) || win32.isAbsolute(docsRoot)) ||
+    (posix.isAbsolute(docsRoot) || win32.parse(docsRoot).root !== '') ||
     docsRoot.includes('\\') ||
     docsRoot.split('/').some(segment => segment === '' || segment === '.' || segment === '..')
   ) {
     throw invalid(
       configPath,
       'docsRoot',
-      'must be a repository-relative directory without empty, . or .. segments',
+      'must be a repository-relative directory without internal empty, . or .. segments',
     );
   }
   return docsRoot;
