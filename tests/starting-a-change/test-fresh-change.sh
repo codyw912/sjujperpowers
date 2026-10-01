@@ -153,8 +153,8 @@ assert_eq "$tr_out" "main main" "trunk-rev ignores a newer upstream"
 assert_eq "$(cd "$fw/repo" && jj log -r "${tr_out%% *}" --no-graph -T 'description.first_line()')" "fork change" "trunk-rev revset resolves to the fork's head"
 
 # Case 7: local main is one landed change ahead of main@origin (landed, not pushed).
-# The stack finishing shows and the discard target start at local main, so the
-# landed change is in neither. A diverged or behind main stops.
+# The stack finishing shows, the discard target, and the classified range all start
+# at local main, so the landed change is in none of them. A diverged main stops.
 la="$TEST_ROOT/landed-ahead"; mkdir -p "$la/repo"; git init -q --bare "$la/origin.git"
 (cd "$la/repo" && jj git init >/dev/null 2>&1 && echo a > f && jj commit -m base >/dev/null 2>&1 \
   && jj bookmark create main -r @- >/dev/null 2>&1 && jj git remote add origin "$la/origin.git" \
@@ -168,6 +168,9 @@ stack="$(cd "$la/repo" && jj log -r "$TRUNK..@ ~ empty()" --no-graph -T 'descrip
 assert_eq "$stack" "stack change" "shown stack excludes the landed change"
 discard="$(cd "$la/repo" && jj log -r "$TRUNK..@" --no-graph -T 'description.first_line() ++ "|"')"
 [[ "$discard" != *"landed change"* ]] && pass "discard target excludes the landed change" || fail "discard target includes landed change: $discard"
+cls="$(node "$REPO_ROOT/skills/verifying-by-risk/scripts/classify-risk.mjs" --repo "$la/repo")"
+cls_paths="$(node -e 'const c=JSON.parse(process.argv[1]); console.log(c.paths.map(p=>p.to).join(","))' "$cls")"
+assert_eq "$cls_paths" "work.txt" "classified range matches the shown stack"
 git clone -q "$la/origin.git" "$la/other"
 (cd "$la/other" && echo other > other.txt && git add other.txt \
   && git -c user.name=t -c user.email=t@t commit -qm "other landing" && git push -q origin HEAD:main)
@@ -175,6 +178,8 @@ git clone -q "$la/origin.git" "$la/other"
 set +e; tr_err="$(cd "$la/repo" && "$TRUNK_REV" 2>&1 >/dev/null)"; tr_code=$?; set -e
 assert_eq "$tr_code" "1" "diverged main (conflicted after fetch) stops trunk-rev"
 [[ "$tr_err" == *"conflicted"* ]] && pass "diverged message names the conflict" || fail "unexpected message: $tr_err"
+set +e; (node "$REPO_ROOT/skills/verifying-by-risk/scripts/classify-risk.mjs" --repo "$la/repo" >/dev/null 2>&1); cls_code=$?; set -e
+assert_eq "$cls_code" "2" "diverged main stops classification too"
 (cd "$la/repo" && jj bookmark set main -r 'main@origin-' --allow-backwards >/dev/null 2>&1)
 set +e; tr_err="$(cd "$la/repo" && "$TRUNK_REV" 2>&1 >/dev/null)"; tr_code=$?; set -e
 assert_eq "$tr_code" "1" "local main behind origin stops trunk-rev"
