@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+# Run `hk check --all` against the committed hk.pkl only.
+#
+# hk merges configuration from places no diff shows: hk.local.pkl and
+# .config/hk.local.pkl (usually git-ignored, so Jujutsu never snapshots them)
+# win over hk.pkl; skip_steps, skip_hooks, and exclude also come from HK_*
+# environment variables, git config, and ~/.config/hk/config.pkl. Any of them
+# can weaken the checks without touching a reviewed file. This wrapper:
+#
+#   - pins HK_FILE to the repository root's hk.pkl (local overrides are ignored);
+#   - clears every HK_* variable and points HK_CONFIG_DIR at an empty directory;
+#   - sets GIT_CONFIG_GLOBAL=/dev/null and GIT_CONFIG_NOSYSTEM=1, which hide
+#     ~/.gitconfig and system config from hk (libgit2) but not
+#     $XDG_CONFIG_HOME/git/config or the repository's own git config;
+#   - refuses (exit 2) when the effective configuration (`hk config dump`)
+#     still skips steps, skips hooks, or excludes files, naming each source.
+#     The skip_hooks check is load-bearing: hk.skipHooks=check makes
+#     `hk check --all` exit 0 while the plan still reports every step included;
+#   - refuses when the un-narrowed plan (no forwarded args) skips a step for
+#     any reason except profile or file filters;
+#   - refuses `--step NAME` that matches no step, because hk exits 0 for an
+#     unknown step;
+#   - refuses a root hk.pkl that is not tracked in @: a git-ignored local
+#     file is not the committed config.
+#
+# Extra arguments go to `hk check --all` (for example `--step NAME --format jsonl`).
+# With --evidence FILE (first), it writes the pinned file, the override files
+# present, the effective skip/exclude settings, the forwarded args, and the
+# plan narrowed by those args as JSON.
+#
+# Exit: hk's own status, or 2 when the configuration cannot be pinned.
+#
+# Usage: hk-check [--evidence FILE] [hk check args...]
+set -euo pipefail
+
+evidence=
+if [ "${1:-}" = --evidence ]; then
+  evidence=${2:?usage: hk-check [--evidence FILE] [hk check args...]}
+  shift 2
+fi
+
+root=$(jj root 2>/dev/null) || { echo "hk-check: not in a jj repository" >&2; exit 2; }
+[ -f "$root/hk.pkl" ] || { echo "hk-check: no hk.pkl at the repository root ($root); hk-conventions keep it there" >&2; exit 2; }
+[ "$(cd "$root" && jj file list -r @ -- hk.pkl 2>/dev/null)" = "hk.pkl" ] || {
+  echo "hk-check: $root/hk.pkl is not tracked in @; commit it, local files are not the committed config" >&2
+  exit 2
+}
+
+empty=$(mktemp -d)
+trap 'rm -rf "$empty"' EXIT
+
+pinned() {
+  # shellcheck disable=SC2046
+  env $(env | sed -n 's/^\(HK_[A-Za-z0-9_]*\)=.*/-u \1/p') \
+    HK_FILE="$root/hk.pkl" HK_CONFIG_DIR="$empty" \
+    GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 \
+    hk "$@"
+}
+
+settings=$(pinned config dump | jq -c '{skip_steps, skip_hooks, exclude}')
+if [ "$(jq -r '[.skip_steps, .skip_hooks, .exclude] | map(length) | add' <<<"$settings")" != 0 ]; then
+  {
+    echo "hk-check: configuration outside hk.pkl skips or excludes checks:"
+    for key in skip_steps skip_hooks exclude; do
+      [ "$(jq -r --arg k "$key" '.[$k] | length' <<<"$settings")" = 0 ] && continue
+      pinned config explain "$key" | sed -n "s/^    - \(.*\)/  $key \1/p"
+    done
+    echo "Remove those hk.* keys from git config (repository .git/config or \$XDG_CONFIG_HOME/git/config)."
+  } >&2
+  exit 2
+fi
+
+plan=$(pinned check --all --plan --json | jq -c '[.steps[] | {name, status, reasons: [.reasons[].kind]}]')
+bad=$(jq -c '[.[] | select(.status != "included" and (.reasons - ["profile_exclude", "filter_no_match"] | length) > 0)]' <<<"$plan")
+if [ "$bad" != '[]' ]; then
+  echo "hk-check: steps skipped by configuration outside hk.pkl: $bad" >&2
+  exit 2
+fi
+
+# hk accepts --step NAME (and --step=NAME) but exits 0 when NAME matches no
+# step, so check it against the un-narrowed plan before anything runs.
+names=$(jq -r '.[].name' <<<"$plan")
+step_next=
+for arg in "$@"; do
+  if [ -n "$step_next" ]; then
+    step=$arg; step_next=
+  elif [ "$arg" = --step ]; then
+    step_next=1; continue
+  elif [[ "$arg" == --step=* ]]; then
+    step=${arg#--step=}
+  else
+    continue
+  fi
+  grep -qxF "$step" <<<"$names" || {
+    echo "hk-check: --step $step names no step in the plan; hk would exit 0 without running it" >&2
+    exit 2
+  }
+done
+
+# The evidence records the plan the run actually uses: the forwarded args,
+# minus flags that only affect output (--format, --json, --plan).
+plan_args=()
+fmt_next=
+for arg in "$@"; do
+  if [ -n "$fmt_next" ]; then fmt_next=; continue; fi
+  case $arg in
+    --format) fmt_next=1 ;;
+    --format=*|--json|-J|--plan|-P) ;;
+    *) plan_args+=("$arg") ;;
+  esac
+done
+args_json='[]'
+[ $# -gt 0 ] && args_json=$(printf '%s\n' "$@" | jq -R . | jq -sc .)
+run_plan=$(pinned check --all --plan --json "${plan_args[@]}" | jq -c '[.steps[] | {name, status, reasons: [.reasons[].kind]}]')
+
+if [ -n "$evidence" ]; then
+  overrides=$(cd "$root" && for f in hk.local.pkl .config/hk.local.pkl .config/hk.pkl; do [ -e "$f" ] && printf '%s\n' "$f"; done || true)
+  jq -n --arg file "$root/hk.pkl" --arg overrides "$overrides" --argjson settings "$settings" --argjson plan "$run_plan" \
+    --argjson args "$args_json" \
+    '{hkFile: $file, ignoredOverrides: ($overrides | split("\n") | map(select(. != ""))), settings: $settings, args: $args, steps: $plan}' > "$evidence"
+fi
+
+set +e
+pinned check --all "$@"
+status=$?
+set -e
+exit "$status"

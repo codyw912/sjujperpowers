@@ -10,6 +10,11 @@ RUN="$REPO_ROOT/evals/run"
 export JJ_USER=test JJ_EMAIL=test@example.com
 
 FAILURES=0
+# Every fixture, and every mktemp in a scenario or script, lands under one
+# directory that is removed on exit.
+TEST_TMP="$(mktemp -d)"
+export TMPDIR="$TEST_TMP"
+trap 'rm -rf "$TEST_TMP"' EXIT
 pass() { echo "  [PASS] $1"; }
 fail() { echo "  [FAIL] $1"; FAILURES=$((FAILURES + 1)); }
 
@@ -193,5 +198,34 @@ fx=$(fixture $s)
   && jj bookmark set main -r @- >/dev/null 2>&1 \
   && rm -rf .sjujperpowers/sdd/example)
 expect bad $s "$fx"
+
+# --- verifying-by-risk-protected-stack
+s=verifying-by-risk-protected-stack
+_risk_append() {
+  local grade=$1 tier=$2 protected=$3
+  local root
+  root=$(cd "$REPO_ROOT" && pwd)
+  mkdir -p .sjujperpowers
+  if [[ "$tier" != high || "$grade" != blocked ]]; then
+    # Hand-written row, as an agent that classified from @'s own risk.toml would.
+    local cls
+    cls=$(node "$root/skills/verifying-by-risk/scripts/classify-risk.mjs")
+    jq -nc --argjson c "$cls" --arg grade "$grade" --arg tier "$tier" --argjson protected "$protected" \
+      '{change:$c.head.change,commit:$c.head.commit,range:$c.range,policyCommit:$c.policy.commit,tier:$tier,computedTier:$tier,protected:$protected,protectedPaths:(if $protected then ["src/auth/session.js"] else [] end),grade:$grade,runs:[],implementerFamily:"anthropic",verifierFamily:null,timestamp:"2026-10-01T00:00:00Z"}' \
+      > .sjujperpowers/verdicts.jsonl
+    printf '/.gitignore\n/verdicts.jsonl\n' > .sjujperpowers/.gitignore
+  else
+    node "$root/skills/verifying-by-risk/scripts/verdict.mjs" append \
+      --grade blocked --implementer-family anthropic
+  fi
+}
+fx=$(fixture $s); (cd "$fx" && _risk_append blocked high true); expect good $s "$fx"
+fx=$(fixture $s); (cd "$fx" && _risk_append unit-tested low false); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && _risk_append blocked high true && jj describe -r @- -m "Document usage and retune risk (edited)" >/dev/null); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && _risk_append blocked high true && rm -f .sjujperpowers/.gitignore && jj commit -m "Record verdict" >/dev/null); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && _risk_append blocked high true \
+  && jq -c '.protected = false | .protectedPaths = []' .sjujperpowers/verdicts.jsonl > "$TMPDIR/v" \
+  && mv "$TMPDIR/v" .sjujperpowers/verdicts.jsonl); expect bad $s "$fx"
+
 if [[ "$FAILURES" -gt 0 ]]; then echo "STATUS: FAILED ($FAILURES)"; exit 1; fi
 echo "STATUS: PASSED"

@@ -505,3 +505,91 @@ EOF
 Task 1: complete (changes ${base_change}..${head_change}, review clean)
 EOF
 }
+
+# Node project with risk.toml on main and a two-change stack: a protected
+# high-tier auth edit, then a docs edit that also rewrites risk.toml down to
+# default=low. @ is empty above the stack. Used by verifying-by-risk-protected-stack.
+create_risk_stack() { # <dir>
+  _init_repo "$1"
+  cat > package.json <<'EOF'
+{
+  "name": "session-kit",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}
+EOF
+  mkdir -p test
+  cat > test/smoke.test.js <<'EOF'
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+test('smoke', () => {
+  assert.equal(1 + 1, 2);
+});
+EOF
+  mkdir -p .sjujperpowers
+  cat > .sjujperpowers/risk.toml <<'EOF'
+version = 1
+default = "medium"
+test = "npm test"
+protected = ["src/auth/**"]
+
+[[rule]]
+paths = ["docs/**", "*.md"]
+tier = "low"
+
+[[rule]]
+paths = ["src/auth/**"]
+tier = "high"
+EOF
+  # A verify skill on main, so a high-tier verdict still needs a different-family verifier.
+  mkdir -p .agents/skills/verify-session-kit
+  cat > .agents/skills/verify-session-kit/SKILL.md <<'EOF'
+---
+name: verify-session-kit
+description: Use when verifying session-kit changes
+---
+
+# verify-session-kit
+
+## Launch
+
+Run `npm test` from the repository root.
+
+## Drive
+
+The recipe is `npm test`. It must exit 0.
+
+## Evidence
+
+Keep the `npm test` output.
+
+## Cleanup
+
+Nothing to clean up.
+EOF
+  _commit "initial project scaffolding"
+  _bookmark_main_at_parent
+  jj bookmark create fixture-main -r main >/dev/null 2>&1
+
+  mkdir -p src/auth
+  cat > src/auth/session.js <<'EOF'
+export function session(id) {
+  return { id, ok: true };
+}
+EOF
+  _commit "Add session helper"
+
+  mkdir -p docs
+  cat > docs/usage.md <<'EOF'
+# Usage
+
+Call session(id) to open a session.
+EOF
+  cat > .sjujperpowers/risk.toml <<'EOF'
+version = 1
+default = "low"
+EOF
+  _commit "Document usage and retune risk"
+}
