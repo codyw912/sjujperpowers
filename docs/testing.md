@@ -17,6 +17,8 @@ Live in `tests/`. Currently:
 - `tests/starting-a-change/` — `fresh-change`, `trunk-rev`, `add-workspace`: spec/plan stay in the working copy, loose WIP is never absorbed, trunk is the local bookmark (ahead of origin is fine; behind, diverged, or conflicted stops), new work starts on it, review bases come from its fork point, workspaces descend from a committed ignore entry (requires `jj`).
 - `tests/tracking-providers/` — provider normalization, checked Kata preflight, plan parsing, idempotent materialization, independent `file + kata` composition, and plan-root selection guards.
 - `tests/systematic-debugging/` — find-polluter helper.
+- `tests/verifying-by-risk/` — risk policy parser, whole-stack classification against policy on the local trunk, the verdict ledger with tamper checks (requires `jj`), and `hk-check` against real hk overrides (requires `hk`; skips without it).
+- `tests/creating-a-verification-skill/` — tmux TTY driver against a real interactive CLI (requires `tmux`; skips without it).
 - `tests/writing-skills/` — skill graph rendering.
 - `tests/shell-lint/` — shell lint.
 - `tests/fork-rename/` — `scripts/fork-rename.mjs` (upstream-name transform used when syncing; see `docs/upstream-sync.md`).

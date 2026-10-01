@@ -42,9 +42,10 @@ If a task blocks, keep its todo actionable, add the Kata `blocked` label with a 
 After all tasks are implemented and verified:
 
 - Keep the Kata parent and children open.
+- **REQUIRED SUB-SKILL:** Use sjujperpowers:verifying-by-risk to classify the stack, record a verdict, and write the operator brief.
 - Announce: "I'm using the finishing-a-change-stack skill to complete this work."
 - **REQUIRED SUB-SKILL:** Use sjujperpowers:finishing-a-change-stack.
-- Hand it the plan path and retained Kata refs, then follow that skill to verify, shape, present options, execute the choice, and close only after the configured completion event.
+- Hand it the plan path, retained Kata refs, and the operator brief, then follow that skill to verify, shape, present options, execute the choice, and close only after the configured completion event.
 
 ## When to Stop and Ask for Help
 

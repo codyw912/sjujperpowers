@@ -178,6 +178,9 @@ Kata-backed plans label roots and executable children separately, and children b
 - **test-driven-development** — RED-GREEN-REFACTOR cycle
 - **systematic-debugging** — 4-phase root cause process
 - **verification-before-completion** — Ensure it's actually fixed
+- **verifying-by-risk** — Risk-scaled verification, verdict ledger, and a short operator brief
+- **creating-a-verification-skill** — Generate a rerunnable project verify skill
+- **learning-from-feedback** — Turn operator corrections into durable checks
 - **dispatching-parallel-agents** — Concurrent subagent workflows
 - **writing-skills** — Create and test new skills
 

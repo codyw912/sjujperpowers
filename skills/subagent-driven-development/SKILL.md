@@ -504,7 +504,7 @@ took on your human partner's behalf reach them — they read it and rework
 whatever you got wrong. A ruling that dies with the workspace was a decision
 made in secret.
 
-When the final whole-branch review is clean and its fixes are merged, hand the plan path, recovery-workspace path, Kata parent/child refs, verification commands, and collected rulings to sjujperpowers:finishing-a-change-stack.
+When the final whole-branch review is clean and its fixes are merged, run sjujperpowers:verifying-by-risk on the stack. Put the collected rulings under the brief's Attention as parked findings. Then hand the plan path, recovery-workspace path, Kata parent/child refs, verification commands, collected rulings, and the operator brief to sjujperpowers:finishing-a-change-stack.
 
 Do not delete the per-plan recovery workspace yet. Finishing removes it only after a successful local landing or confirmed discard. Pull-request and keep-as-is outcomes retain it because the stack remains resumable.
 
