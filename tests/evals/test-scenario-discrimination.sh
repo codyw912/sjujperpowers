@@ -227,5 +227,102 @@ fx=$(fixture $s); (cd "$fx" && _risk_append blocked high true \
   && jq -c '.protected = false | .protectedPaths = []' .sjujperpowers/verdicts.jsonl > "$TMPDIR/v" \
   && mv "$TMPDIR/v" .sjujperpowers/verdicts.jsonl); expect bad $s "$fx"
 
+# --- creating-a-verification-skill-tally
+s=creating-a-verification-skill-tally
+_tally_skill() { # <driver: copy|modify> <symlink: yes|no> <evidence: yes|no>
+  local driver=$1 symlink=$2 evidence=$3
+  local root lib
+  root=$(cd "$REPO_ROOT" && pwd)
+  lib="$root/skills/creating-a-verification-skill/drivers/tmux-tty.sh"
+  mkdir -p .agents/skills/verify-tally/features .agents/skills/verify-tally/scripts/lib .claude/skills
+  cat > .agents/skills/verify-tally/SKILL.md <<'EOF'
+# verify-tally
+
+## Launch
+
+Run scripts/launch. It starts bin/tally under the tmux driver as session tally.
+
+## Doctor
+
+Run scripts/doctor. It checks bin/tally is executable.
+
+## Drive
+
+Run scripts/drive-add. It adds 2 and 3 and reads the total.
+
+## Evidence
+
+scripts/drive-add prints the evidence directory as its last stdout line.
+
+## Cleanup
+
+Run scripts/cleanup. It stops session tally and is idempotent.
+
+## Helpers
+
+scripts/lib/tmux-tty.sh is the shipped driver. Do not reimplement it.
+EOF
+  printf 'Add 2 and 3, then read total=5.\n' > .agents/skills/verify-tally/features/add.md
+  if [[ "$driver" == modify ]]; then
+    sed 's/private tmux server/private tmux server (local copy)/' "$lib" > .agents/skills/verify-tally/scripts/lib/tmux-tty.sh
+  else
+    cp "$lib" .agents/skills/verify-tally/scripts/lib/tmux-tty.sh
+  fi
+  chmod +x .agents/skills/verify-tally/scripts/lib/tmux-tty.sh
+  cat > .agents/skills/verify-tally/scripts/doctor <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd "$(dirname "$0")/../../../../" && pwd)
+test -x "$root/bin/tally"
+EOF
+  cat > .agents/skills/verify-tally/scripts/launch <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+root=$(cd "$here/../../../.." && pwd)
+"$here/lib/tmux-tty.sh" start tally "$root" "$root/bin/tally"
+"$here/lib/tmux-tty.sh" wait tally 'tally ready' 5
+EOF
+  if [[ "$evidence" == yes ]]; then
+    cat > .agents/skills/verify-tally/scripts/drive-add <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+ev=$("$here/lib/tmux-tty.sh" evidence-dir tally)
+"$here/lib/tmux-tty.sh" send tally 'add 2'
+"$here/lib/tmux-tty.sh" send tally 'add 3'
+"$here/lib/tmux-tty.sh" send tally 'total'
+"$here/lib/tmux-tty.sh" wait tally 'total=5' 5
+"$here/lib/tmux-tty.sh" capture tally "$ev/screen.txt"
+printf '%s\n' "$ev"
+EOF
+  else
+    cat > .agents/skills/verify-tally/scripts/drive-add <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "skipped"
+EOF
+  fi
+  cat > .agents/skills/verify-tally/scripts/cleanup <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+"$here/lib/tmux-tty.sh" stop tally
+EOF
+  chmod +x .agents/skills/verify-tally/scripts/doctor \
+    .agents/skills/verify-tally/scripts/launch \
+    .agents/skills/verify-tally/scripts/drive-add \
+    .agents/skills/verify-tally/scripts/cleanup
+  if [[ "$symlink" == yes ]]; then
+    ln -s ../../.agents/skills/verify-tally .claude/skills/verify-tally
+  fi
+}
+fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes yes); expect good $s "$fx"
+fx=$(fixture $s); (cd "$fx" && _tally_skill modify yes yes); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && _tally_skill copy no yes); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes no); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes yes \
+  && printf '#!/usr/bin/env bash\nexit 0\n' > .agents/skills/verify-tally/scripts/cleanup); expect bad $s "$fx"
+
 if [[ "$FAILURES" -gt 0 ]]; then echo "STATUS: FAILED ($FAILURES)"; exit 1; fi
 echo "STATUS: PASSED"

@@ -46,6 +46,7 @@ misconfigured, not that the agent failed.
 | `tracking-providers-kata` | checked preflight, named-plan recovery, claim-before-association, and keep-open completion | new |
 | `tracking-providers-kata-landed` | landing-before-close ordering, child-before-root close, and delayed recovery cleanup | new |
 | `verifying-by-risk-protected-stack` | policy from local `main`, whole-stack range, protected override, blocked without a different-family verifier | new |
+| `creating-a-verification-skill-tally` | generated verify-tally layout, reused tmux driver, recorded end-to-end run | new |
 
 ## Writing one
 

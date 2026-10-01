@@ -593,3 +593,47 @@ default = "low"
 EOF
   _commit "Document usage and retune risk"
 }
+
+# Interactive tally CLI committed on main, @ empty. Used by
+# creating-a-verification-skill-tally.
+create_tally_cli() { # <dir>
+  _init_repo "$1"
+  mkdir -p bin tests
+  cat > bin/tally <<'EOF'
+#!/usr/bin/env bash
+# Interactive tally. Commands: add N, total, quit.
+set -u
+total=0
+printf 'tally ready\n'
+printf '> '
+while IFS= read -r line; do
+  # shellcheck disable=SC2086
+  set -- $line
+  case "${1:-}" in
+    add) total=$((total + ${2:-0})) ;;
+    total) printf 'total=%s\n' "$total" ;;
+    quit) exit 0 ;;
+    *) ;;
+  esac
+  printf '> '
+done
+EOF
+  chmod +x bin/tally
+  cat > README.md <<'EOF'
+# tally
+
+Interactive counter. Prints `tally ready`, then a `> ` prompt.
+
+Commands: `add N` adds N, `total` prints `total=N`, `quit` exits.
+EOF
+  cat > tests/tally.test.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+out=$(printf 'add 2\nadd 3\ntotal\nquit\n' | bin/tally)
+printf '%s\n' "$out" | grep -q 'tally ready'
+printf '%s\n' "$out" | grep -q 'total=5'
+EOF
+  chmod +x tests/tally.test.sh
+  _commit "Add tally CLI"
+  _bookmark_main_at_parent
+}
