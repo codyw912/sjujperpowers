@@ -637,3 +637,66 @@ EOF
   _commit "Add tally CLI"
   _bookmark_main_at_parent
 }
+
+# Node project with hk.pkl on main and one described stack change that logs
+# diagnostics with console.log. @ is empty. main also carries an executable
+# helper (scripts/check-scaffold, mode 755) run by the scaffold-intact step,
+# and a relative symlink (config/notice.txt -> ../shared/notice.txt) that the
+# helper requires, so an export that loses either fails the hk run. Used by
+# learning-from-feedback-red-green.
+create_feedback_stack() { # <dir>
+  _init_repo "$1"
+  cat > package.json <<'EOF'
+{
+  "name": "report-kit",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}
+EOF
+  cat > hk.pkl <<'EOF'
+amends "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Config.pkl"
+
+hooks {
+  ["check"] {
+    steps {
+      ["readme-nonempty"] {
+        glob = "README.md"
+        check = "sh -c 'test -s {{files}}'"
+      }
+      ["scaffold-intact"] {
+        check = "scripts/check-scaffold"
+      }
+    }
+  }
+}
+EOF
+  mkdir -p scripts config shared
+  cat > scripts/check-scaffold <<'EOF'
+#!/bin/sh
+# Fail unless the shared notice is reachable through its symlink.
+set -eu
+test -L config/notice.txt
+test -s config/notice.txt
+EOF
+  chmod 755 scripts/check-scaffold
+  echo "Reports are advisory." > shared/notice.txt
+  ln -s ../shared/notice.txt config/notice.txt
+  cat > README.md <<'EOF'
+# report-kit
+
+Renders a one-line report.
+EOF
+  _commit "initial project scaffolding"
+  _bookmark_main_at_parent
+
+  mkdir -p src
+  cat > src/report.js <<'EOF'
+export function report(label) {
+  console.log("diag", label);
+  return label;
+}
+EOF
+  _commit "Add report helper"
+  jj bookmark create delivered -r @- >/dev/null 2>&1
+}

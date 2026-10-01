@@ -324,5 +324,123 @@ fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes no); expect bad $s "$fx"
 fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes yes \
   && printf '#!/usr/bin/env bash\nexit 0\n' > .agents/skills/verify-tally/scripts/cleanup); expect bad $s "$fx"
 
+# --- learning-from-feedback-red-green (needs hk 2.4.0 on PATH)
+s=learning-from-feedback-red-green
+if ! command -v hk >/dev/null 2>&1; then
+  echo "  [SKIP] $s: hk not on PATH"
+else
+_feedback_rule() { # <glob>
+  cat > hk.pkl <<EOF
+amends "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Config.pkl"
+
+hooks {
+  ["check"] {
+    steps {
+      ["readme-nonempty"] {
+        glob = "README.md"
+        check = "sh -c 'test -s {{files}}'"
+      }
+      ["scaffold-intact"] {
+        check = "scripts/check-scaffold"
+      }
+      ["no-console-log"] {
+        glob = "$1"
+        check = "sh -c '! grep -n console\\\\.log {{files}}'"
+      }
+    }
+  }
+}
+EOF
+}
+_feedback_fix() {
+  mkdir -p src
+  cat > src/log.js <<'EOF'
+export function log(label) {
+  return label;
+}
+EOF
+  cat > src/report.js <<'EOF'
+import { log } from './log.js';
+export function report(label) {
+  log(label);
+  return label;
+}
+EOF
+}
+fx=$(fixture $s)
+(cd "$fx" && _feedback_rule 'src/**' && jj commit -m "Reject console.log in src" >/dev/null && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null)
+expect good $s "$fx"
+# A rule that ships its own executable check script is also a good outcome:
+# the rule change holds hk.pkl plus scripts/check-no-console, nothing else.
+_feedback_script_hkpkl() {
+  cat > hk.pkl <<'EOF'
+amends "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Config.pkl"
+
+hooks {
+  ["check"] {
+    steps {
+      ["readme-nonempty"] {
+        glob = "README.md"
+        check = "sh -c 'test -s {{files}}'"
+      }
+      ["scaffold-intact"] {
+        check = "scripts/check-scaffold"
+      }
+      ["no-console-in-src"] {
+        check = "scripts/check-no-console"
+      }
+    }
+  }
+}
+EOF
+}
+_feedback_script_rule() {
+  _feedback_script_hkpkl
+  cat > scripts/check-no-console <<'EOF'
+#!/bin/sh
+set -eu
+! grep -rn 'console\.log' src/
+EOF
+  chmod 755 scripts/check-no-console
+}
+fx=$(fixture $s)
+(cd "$fx" && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null && _feedback_script_rule && jj commit -m "Reject console.log in src" >/dev/null)
+expect good $s "$fx"
+# The script left out of the rule change travels with the code fix instead: the
+# rule change touches only hk.pkl, so the delivered export lacks the script and
+# red's rule step fails for the wrong reason (command not found), which must be
+# caught.
+fx=$(fixture $s)
+(cd "$fx" && cat > scripts/check-no-console <<'EOF'
+#!/bin/sh
+set -eu
+! grep -rn 'console\.log' src/
+EOF
+  chmod 755 scripts/check-no-console && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null && _feedback_script_hkpkl && jj commit -m "Reject console.log in src" >/dev/null)
+expect bad $s "$fx"
+# The rule left uncommitted in @ (jj snapshots @, so files(hk.pkl) alone
+# matches a dirty working copy). Caught by jj-described / != @.
+fx=$(fixture $s)
+(cd "$fx" && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null && _feedback_script_rule)
+expect bad $s "$fx"
+fx=$(fixture $s)
+(cd "$fx" && _feedback_rule 'lib/**' && jj commit -m "Reject console.log in lib" >/dev/null && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null)
+expect bad $s "$fx"
+fx=$(fixture $s)
+(cd "$fx" && _feedback_rule 'src/**' && _feedback_fix && jj commit -m "Reject console.log and fix report" >/dev/null)
+expect bad $s "$fx"
+fx=$(fixture $s)
+(cd "$fx" && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null)
+expect bad $s "$fx"
+# The fixed head lost the helper's exec bit: the git archive export is not executable.
+fx=$(fixture $s)
+(cd "$fx" && _feedback_rule 'src/**' && jj commit -m "Reject console.log in src" >/dev/null && _feedback_fix && chmod -x scripts/check-scaffold && jj commit -m "Route diagnostics through src/log.js" >/dev/null)
+expect bad $s "$fx"
+# The fixed head replaced the symlink with a plain copy.
+fx=$(fixture $s)
+(cd "$fx" && _feedback_rule 'src/**' && jj commit -m "Reject console.log in src" >/dev/null && _feedback_fix && rm config/notice.txt && cp shared/notice.txt config/notice.txt && jj commit -m "Route diagnostics through src/log.js" >/dev/null)
+expect bad $s "$fx"
+fi
+
 if [[ "$FAILURES" -gt 0 ]]; then echo "STATUS: FAILED ($FAILURES)"; exit 1; fi
 echo "STATUS: PASSED"
