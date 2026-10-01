@@ -23,6 +23,7 @@ evals/run setup finishing-stack-no-unprompted-discard
 #   builds a throwaway jj repo, runs pre-checks, prints the story and the dir
 cd <printed dir>            # start your agent here and play the story's human
 evals/run post finishing-stack-no-unprompted-discard <printed dir>
+evals/run teardown <printed dir>   # always, even after a failed or abandoned run
 ```
 
 Verdict = every acceptance criterion met (your call, from the transcript)

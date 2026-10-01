@@ -4,6 +4,8 @@
 #   evals/run setup <scenario>     build the fixture in a temp dir, run pre-checks,
 #                                  print the story and the directory to start your agent in
 #   evals/run post <scenario> <dir> run post-checks against the fixture after the session
+#   evals/run teardown <dir>       remove the fixture and its temp directory (after post,
+#                                  and after a failed or abandoned run)
 #   evals/run list                 scenarios and their status
 #
 # Grade the acceptance criteria in story.md yourself from the transcript;
@@ -27,6 +29,9 @@ case "$cmd" in
     dir="$here/scenarios/$scenario"
     [ -d "$dir" ] || { echo "no such scenario: $scenario" >&2; exit 2; }
     fixture=$(mktemp -d)/repo
+    # Ownership marker: teardown refuses any directory without it. Kept outside
+    # repo/ so the fixture's jj never sees it.
+    : > "$(dirname "$fixture")/.evals-run-fixture"
     # shellcheck disable=SC1091
     . "$here/lib/fixtures.sh"
     # shellcheck disable=SC1091
@@ -42,6 +47,7 @@ case "$cmd" in
     echo "Fixture ready. Start your agent in:"
     echo "  cd $fixture"
     echo "Afterwards: evals/run post $scenario $fixture"
+    echo "Then, always (even if post failed): evals/run teardown $fixture"
     ;;
   post)
     scenario=${1:?scenario name}; fixture=${2:?fixture dir}
@@ -51,6 +57,24 @@ case "$cmd" in
     . "$here/lib/checks.sh"
     run-checks post "$dir"
     ;;
+  teardown)
+    fixture=${1:?fixture dir}
+    # Only a directory setup made: a marked mktemp dir directly under TMPDIR,
+    # containing `repo`. Anything else is refused with exit 2 and left in place.
+    refuse() { echo "refusing to remove $fixture: $1" >&2; exit 2; }
+    tmp_root=$(cd "${TMPDIR:-/tmp}" && pwd -P)
+    parent=$(cd "$(dirname "$fixture")" 2>/dev/null && pwd -P) || refuse "no such fixture: $fixture"
+    [ "$(cd "$parent/.." && pwd -P)" = "$tmp_root" ] \
+      || refuse "not an evals/run fixture under ${TMPDIR:-/tmp}"
+    case "$(basename "$parent")" in
+      tmp.*) ;;
+      *) refuse "not an evals/run fixture under ${TMPDIR:-/tmp}" ;;
+    esac
+    [ "$(basename "$fixture")" = repo ] || refuse "fixtures end in /repo"
+    [ -f "$parent/.evals-run-fixture" ] || refuse "no .evals-run-fixture marker: not created by setup"
+    rm -rf "$parent"
+    echo "removed $parent"
+    ;;
   *)
-    sed -n '2,10p' "$0"; exit 2;;
+    sed -n '2,12p' "$0"; exit 2;;
 esac

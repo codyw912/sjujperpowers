@@ -47,13 +47,13 @@ Any file-roadmap edit lands in `@`; Step 3 describes it. A later confirmed disca
 
 ## Step 3: Show the Stack
 
-Resolve the trunk first — jj's built-in `trunk()` only sees remote bookmarks and falls back to `root()` in a local-only repo:
+Resolve the trunk first. The stack boundary is the local trunk bookmark: landing moves it locally and nothing pushes it, so `main@origin..@` would include changes that already landed. jj's built-in `trunk()` is no better; it only sees remote bookmarks and falls back to `root()` in a local-only repo.
 
 ```bash
 read -r TRUNK TRUNK_BOOKMARK < <(<starting-a-change skill dir>/scripts/trunk-rev)
 ```
 
-It prints e.g. `main@origin main`, `trunk() main`, or `main main` (local-only repo). If it fails, stop and have the user run `jj bookmark create main -r <base>`, then start Step 3 over. Use `$TRUNK` wherever this skill writes `trunk()`.
+It prints e.g. `main main`. If it fails, stop and relay its message: no trunk bookmark (have the user run `jj bookmark create main -r <base>`), or local trunk behind, diverged from, or conflicted with `<bookmark>@origin` (the user reconciles it; never pick a side yourself). Then start Step 3 over. Use `$TRUNK` wherever this skill writes `trunk()`: stack display, conflict checks, shaping, rebase, bookmark update, and discard.
 
 ```bash
 jj log -r "$TRUNK..@"

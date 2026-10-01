@@ -1,43 +1,78 @@
 #!/usr/bin/env bash
-# Print a revset that names this repo's trunk, plus the bookmark behind it.
+# Print the local trunk bookmark as a revset, plus its name.
 #
-# jj's built-in trunk() is `latest(main@origin | main@upstream | ...)` — it
-# picks by committer timestamp, so in a fork with an `upstream` remote it
-# flips to upstream's main whenever upstream is newer. It also falls back to
-# root() in a local-only repo. Rather than requiring a config write, resolve
-# at runtime, in order:
-#   1. main/master/trunk on the `origin` remote   -> `main@origin main`
-#   2. the built-in trunk() if it names a bookmark -> `trunk() main`
-#   3. a local main/master/trunk bookmark          -> `main main`
-# Skills substitute the printed revset wherever they say trunk().
+# The stack boundary is the local trunk bookmark: work landed locally moves it,
+# and nothing pushes it. A remote bookmark is not the boundary. With unpushed
+# local landings, `main@origin..@` would include changes that already landed,
+# so shaping could squash them and discard could abandon them. jj's built-in
+# trunk() is no better: it only sees remote bookmarks, picks by committer
+# timestamp (in a fork it flips to upstream's main whenever upstream is newer),
+# and falls back to root() in a local-only repo.
 #
-# Output: `<revset> <bookmark>`. Exit 1 with a message when nothing qualifies.
+# Resolution: the first local bookmark named main, master, or trunk. If
+# `<name>@origin` exists, it must be the local bookmark or one of its
+# ancestors (local is equal or ahead with unpushed landings). Local behind or
+# diverged from origin exits 1: the boundary is ambiguous until the operator
+# reconciles it.
 #
-# Usage: trunk-rev
+# Output: `<revset> <bookmark>`, e.g. `main main`. Skills substitute the
+# revset wherever they say trunk(). Exit 1 with a message when nothing
+# qualifies or the bookmark disagrees with origin.
+#
+# With --fork-point REV, print instead the commit ID of fork_point(trunk | REV):
+# where the stack ending at REV left trunk. Review diffs start there. Diffing
+# from the trunk commit itself would show changes landed on trunk beside the
+# stack as deletions.
+#
+# Usage: trunk-rev [--fork-point REV]
 set -euo pipefail
 
-for name in main master trunk; do
-  if [ -n "$(jj log -r "present(remote_bookmarks(exact:\"$name\", exact:\"origin\"))" --no-graph -T 'change_id.short()' 2>/dev/null)" ]; then
-    echo "$name@origin $name"
-    exit 0
+fork_rev=
+case "${1:-}" in
+  '') ;;
+  --fork-point)
+    fork_rev=${2:?usage: trunk-rev [--fork-point REV]}
+    ;;
+  *)
+    echo "usage: trunk-rev [--fork-point REV]" >&2
+    exit 2
+    ;;
+esac
+
+name=
+for candidate in main master trunk; do
+  if [ -n "$(jj log -r "present(bookmarks(exact:\"$candidate\"))" --no-graph -T 'change_id.short()' 2>/dev/null)" ]; then
+    name=$candidate
+    break
   fi
 done
 
-# Built-in trunk() names a commit; derive the bookmark only from a main/master/
-# trunk label on it — never from whatever other bookmark happens to sit there.
-for token in $(jj log -r 'trunk()' --no-graph -T 'bookmarks' 2>/dev/null || true); do
-  name=${token%%@*}; name=${name%%[*?]*}
-  case "$name" in
-    main|master|trunk) echo "trunk() $name"; exit 0 ;;
-  esac
-done
+if [ -z "$name" ]; then
+  echo "no trunk: no local main/master/trunk bookmark. Create one on the base commit: jj bookmark create main -r <base> (or jj bookmark track main@origin)" >&2
+  exit 1
+fi
 
-for name in main master trunk; do
-  if [ -n "$(jj log -r "present(bookmarks(exact:\"$name\"))" --no-graph -T 'change_id.short()' 2>/dev/null)" ]; then
-    echo "$name $name"
-    exit 0
+local_rev="bookmarks(exact:\"$name\")"
+origin_rev="remote_bookmarks(exact:\"$name\", exact:\"origin\")"
+# A tracked bookmark that diverged from its remote becomes conflicted on fetch
+# and resolves to several commits.
+if [ "$(jj log -r "$local_rev" --no-graph -T 'commit_id ++ "\n"' | grep -c .)" -ne 1 ]; then
+  echo "trunk: local $name is conflicted (it diverged from a remote). Reconcile it before finishing: jj bookmark set $name -r <commit>" >&2
+  exit 1
+fi
+if [ -n "$(jj log -r "present($origin_rev)" --no-graph -T 'change_id.short()' 2>/dev/null)" ]; then
+  if [ -z "$(jj log -r "$origin_rev & ::$local_rev" --no-graph -T 'change_id.short()' 2>/dev/null)" ]; then
+    if [ -n "$(jj log -r "$local_rev & ::$origin_rev" --no-graph -T 'change_id.short()' 2>/dev/null)" ]; then
+      echo "trunk: local $name is behind $name@origin. Move it before finishing: jj bookmark set $name -r $name@origin" >&2
+    else
+      echo "trunk: local $name and $name@origin have diverged. Reconcile them before finishing; the stack boundary is ambiguous." >&2
+    fi
+    exit 1
   fi
-done
+fi
 
-echo "no trunk: trunk() resolves to root() and no local main/master/trunk bookmark exists. Create one on the base commit: jj bookmark create main -r <base>" >&2
-exit 1
+if [ -n "$fork_rev" ]; then
+  jj log -r "fork_point($local_rev | ($fork_rev))" --no-graph -T 'commit_id ++ "\n"'
+  exit 0
+fi
+echo "$name $name"

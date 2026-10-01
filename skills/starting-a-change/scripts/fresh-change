@@ -1,16 +1,29 @@
 #!/usr/bin/env bash
 # Put new work on a fresh jj change without absorbing anything in flight.
 #
-# The stack (spec, plan, earlier commits) lives in trunk()..@ and must stay
-# in the working copy — never reset to trunk(). What must NOT be absorbed is
-# loose, undescribed work-in-progress sitting in @. Three cases:
+# The stack (spec, plan, earlier commits) lives between the local trunk and @
+# and must stay in the working copy — never reset to trunk. What must NOT be
+# absorbed is loose, undescribed work-in-progress sitting in @. Three cases:
 #
 #   @ empty + undescribed   -> reuse it (the normal state after `jj commit`)
 #   @ described             -> `jj new` on top (deliberate work; build on it)
 #   @ non-empty + undescribed -> `jj new @-` (sibling: the WIP stays in its own
 #                              change, untouched, and our work starts beside it)
 #
-# Prints one line: `<change-id> <reused|new-on-top|new-beside-wip> [<wip-change-id>]`.
+# The base the work would sit on (@- when reusing or stepping beside WIP, @
+# when building on a described change) must descend from the local trunk that
+# trunk-rev resolves, the same boundary finishing lands on:
+#
+#   base descends from trunk          -> the case above
+#   base is behind trunk, no stack    -> `jj new <trunk>` (`new-on-trunk`); any
+#                                        WIP stays in its own change
+#   base carries a stack forked from  -> exit 1 with the rebase command; the
+#   an older trunk                       stack is the user's to move
+#
+# A trunk that is behind, diverged from, or conflicted with origin exits 1
+# with trunk-rev's message. A repository with no trunk bookmark only warns.
+#
+# Prints one line: `<change-id> <reused|new-on-top|new-beside-wip|new-on-trunk> [<wip-change-id>]`.
 #
 # Usage: fresh-change
 set -euo pipefail
@@ -20,14 +33,45 @@ if ! jj root >/dev/null 2>&1; then
   exit 2
 fi
 
-# jj's trunk() falls back to root() in a local-only repo; trunk-rev resolves a
-# real trunk at runtime (local main/master/trunk). Finishing needs one; say so early.
-if ! "$(dirname "$0")/trunk-rev" >/dev/null 2>&1; then
-  echo "warning: no trunk found (trunk() resolves to root() and no local main/master/trunk bookmark). Before finishing: jj bookmark create main -r <base>" >&2
+trunk=
+set +e
+tr_out=$("$(dirname "$0")/trunk-rev" 2>&1)
+tr_code=$?
+set -e
+if [ "$tr_code" -eq 0 ]; then
+  trunk=${tr_out%% *}
+elif [[ "$tr_out" == "no trunk:"* ]]; then
+  echo "warning: no trunk found (no local main/master/trunk bookmark). Before finishing: jj bookmark create main -r <base>" >&2
+else
+  echo "$tr_out" >&2
+  exit 1
 fi
 
 state=$(jj log -r @ --no-graph -T 'if(empty, "empty", "nonempty") ++ " " ++ if(description, "described", "undescribed") ++ " " ++ change_id.short()')
 read -r fill desc wc_id <<<"$state"
+
+case "$fill $desc" in
+  "empty undescribed") base='@-' ;;
+  *" described") base='@' ;;
+  *) base='@-' ;;
+esac
+
+new_id() { jj log -r @ --no-graph -T 'change_id.short()'; }
+
+if [ -n "$trunk" ] && [ -z "$(jj log -r "($trunk) & ::($base)" --no-graph -T 'change_id.short()')" ]; then
+  if [ -n "$(jj log -r "($base) & ::($trunk)" --no-graph -T 'change_id.short()')" ]; then
+    jj new --quiet "$trunk"
+    if [ "$fill $desc" = "nonempty undescribed" ]; then
+      echo "$(new_id) new-on-trunk $wc_id"
+    else
+      echo "$(new_id) new-on-trunk"
+    fi
+    exit 0
+  fi
+  roots=$(jj log -r "roots(($trunk)..($base))" --no-graph -T '"-s " ++ change_id.short() ++ " "')
+  echo "the stack under @ is not based on local $trunk (it forked from an older trunk). Rebase it first: jj rebase ${roots}-d $trunk" >&2
+  exit 1
+fi
 
 case "$fill $desc" in
   "empty undescribed")
@@ -35,10 +79,10 @@ case "$fill $desc" in
     ;;
   *" described")
     jj new --quiet
-    echo "$(jj log -r @ --no-graph -T 'change_id.short()') new-on-top"
+    echo "$(new_id) new-on-top"
     ;;
   "nonempty undescribed")
     jj new --quiet '@-'
-    echo "$(jj log -r @ --no-graph -T 'change_id.short()') new-beside-wip $wc_id"
+    echo "$(new_id) new-beside-wip $wc_id"
     ;;
 esac

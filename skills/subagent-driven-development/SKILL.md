@@ -471,7 +471,7 @@ With Kata, add a substantive comment to the task child naming the reviewed scope
 ## Final Review
 
 The final whole-branch review gets a package too: run
-`scripts/review-package PLAN_FILE MERGE_BASE @`. MERGE_BASE is the trunk's commit ID: resolve the trunk with the starting-a-change skill's `scripts/trunk-rev` (jj's built-in `trunk()` is `root()` in a local-only repo), then `jj log -r "$TRUNK" --no-graph -T 'commit_id'`. Include the
+`scripts/review-package PLAN_FILE MERGE_BASE @`. MERGE_BASE is where the stack left trunk: `MERGE_BASE=$(<starting-a-change skill dir>/scripts/trunk-rev --fork-point @)`. Not the trunk commit itself: when another workspace landed on local trunk beside the stack, diffing from trunk shows that landing as deletions. If it exits 1, the local trunk disagrees with origin; relay its message and stop. Include the
 printed path in the final review dispatch, so the final reviewer reads
 one file instead of re-deriving the stack diff with jj commands. Dispatch
 on the most capable available model (see Model Selection), using

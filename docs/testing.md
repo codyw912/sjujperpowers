@@ -14,21 +14,21 @@ Live in `tests/`. Currently:
 - `tests/pi/` — Pi extension.
 - `tests/codex/` — Codex marketplace manifest.
 - `tests/claude-code/` — SDD tests plus `test-sdd-workspace.sh` (requires `jj`).
-- `tests/starting-a-change/` — `fresh-change`, `trunk-rev`, `add-workspace`: spec/plan stay in the working copy, loose WIP is never absorbed, trunk resolves without config, workspaces descend from a committed ignore entry (requires `jj`).
+- `tests/starting-a-change/` — `fresh-change`, `trunk-rev`, `add-workspace`: spec/plan stay in the working copy, loose WIP is never absorbed, trunk is the local bookmark (ahead of origin is fine; behind, diverged, or conflicted stops), new work starts on it, review bases come from its fork point, workspaces descend from a committed ignore entry (requires `jj`).
 - `tests/tracking-providers/` — provider normalization, checked Kata preflight, plan parsing, idempotent materialization, independent `file + kata` composition, and plan-root selection guards.
 - `tests/systematic-debugging/` — find-polluter helper.
 - `tests/writing-skills/` — skill graph rendering.
 - `tests/shell-lint/` — shell lint.
 - `tests/fork-rename/` — `scripts/fork-rename.mjs` (upstream-name transform used when syncing; see `docs/upstream-sync.md`).
 - `tests/upstream-sync/` — the rebase step of `docs/upstream-sync.md`: preflight revset matches what `-s` moves, side branches off the stack survive with parent and diff intact.
-- `tests/evals/` — `evals/lib/checks.sh` counting semantics (`not` records one result), and every scenario's `post()` proven to pass a simulated correct outcome and fail each simulated wrong one.
+- `tests/evals/` — `evals/lib/checks.sh` counting semantics (`not` records one result), every scenario's `post()` proven to pass a simulated correct outcome and fail each simulated wrong one, and `evals/run teardown` refusing anything setup did not create.
 - `tests/explicit-skill-requests/` — LLM evals (Haiku-specific, multi-turn, and skill-name-prompted).
 
 Run plugin tests via the relevant directory's `run-*.sh` or `npm test`.
 
 ## Skill behavior evals
 
-`evals/` holds a small set of scenarios ported from upstream's [superpowers-evals](https://github.com/prime-radiant-inc/superpowers-evals) to jj, without the Quorum harness: you build the fixture with `evals/run setup <scenario>`, play the human per `story.md` in the harness under test, then `evals/run post` for the deterministic backstop. Grading the acceptance criteria is manual. Details and the scenario list are in `evals/README.md`.
+`evals/` holds a small set of scenarios ported from upstream's [superpowers-evals](https://github.com/prime-radiant-inc/superpowers-evals) to jj, without the Quorum harness: you build the fixture with `evals/run setup <scenario>`, play the human per `story.md` in the harness under test, then `evals/run post` for the deterministic backstop. Grading the acceptance criteria is manual; `evals/run teardown <dir>` removes the fixture afterwards. Details and the scenario list are in `evals/README.md`.
 
 ## Tracking-provider checks
 

@@ -31,7 +31,7 @@ Record the base **before** the work starts, as a commit ID (immutable, survives 
 BASE=$(jj log -r @- --no-graph -T 'commit_id')   # with @ empty, before implementing
 ```
 
-Never derive it afterwards: after `jj commit`, `@` is a fresh empty change and `@-` is the work itself, so `@-..@` is an empty diff. If you did not record it, use the trunk from the starting-a-change skill's `scripts/trunk-rev`: `BASE=$(jj log -r "$TRUNK" --no-graph -T 'commit_id')`. HEAD is always `@`.
+Never derive it afterwards: after `jj commit`, `@` is a fresh empty change and `@-` is the work itself, so `@-..@` is an empty diff. If you did not record it, use where the stack left trunk: `BASE=$(<starting-a-change skill dir>/scripts/trunk-rev --fork-point @)`. Not the trunk commit itself, which shows anything landed on trunk since as deletions. A recorded BASE always wins. HEAD is always `@`.
 
 **2. Dispatch code reviewer subagent:**
 
