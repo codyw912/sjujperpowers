@@ -532,6 +532,13 @@ Do not delete the per-plan recovery workspace yet. Finishing removes it only aft
 
 Use sjujperpowers:finishing-a-change-stack.
 
+## Eval Harness Budget
+
+When you run a behavioral RED/GREEN eval, or an eval run the plan prescribes,
+and its harness (fixture, runner, isolation) needs more than one fix before
+the eval can run, stop and report the harness problem to the operator. Do not
+build isolation tooling mid-task.
+
 ## Common Rationalizations
 
 | Excuse | Reality |
@@ -545,6 +552,7 @@ Use sjujperpowers:finishing-a-change-stack.
 | "Reviews slow the loop down" | The loop without reviews is just unverified churn. Reviews are the loop's brakes and steering. |
 | "Ledger bookkeeping is overhead" | The ledger is what survives compaction. Controllers without one have re-dispatched entire completed task sequences. |
 | "The implementer spawned its own reviewer — free extra assurance" | It's a duplicate seat reviewing the same diff; the task review is the gate. A worker-spawned reviewer is a defect to flag, not rigor. |
+| "I'll just add a mount namespace so the eval isolates" | The second harness fix is the stop: report the harness problem to the operator. |
 
 ## Example Workflow
 
