@@ -19,7 +19,7 @@ Live in `tests/`. Currently:
 - `tests/systematic-debugging/` — find-polluter helper.
 - `tests/verifying-by-risk/` — risk policy parser, whole-stack classification against policy on the local trunk, the verdict ledger with tamper checks (requires `jj`), and `hk-check` against real hk overrides (requires `hk`; skips without it).
 - `tests/creating-a-verification-skill/` — tmux TTY driver against a real interactive CLI (requires `tmux`; skips without it).
-- `tests/writing-skills/` — skill graph rendering.
+- `tests/writing-skills/` — skill graph rendering, and the no-process-substitution check on skill code blocks with `test-no-process-substitution-fences.sh` proving its CommonMark fence tracking against temp-dir fixtures.
 - `tests/shell-lint/` — shell lint.
 - `tests/fork-rename/` — `scripts/fork-rename.mjs` (upstream-name transform used when syncing; see `docs/upstream-sync.md`).
 - `tests/upstream-sync/` — the rebase step of `docs/upstream-sync.md`: preflight revset matches what `-s` moves, side branches off the stack survive with parent and diff intact.
