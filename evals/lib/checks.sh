@@ -96,7 +96,10 @@ jj-file-anywhere() { # <path>  — path exists in the tree of some visible revis
 }
 run-checks() { # <pre|post> <scenario-dir>
   local phase=$1 dir=$2
-  # shellcheck disable=SC1091
+  # The scenario's checks.sh is chosen at runtime. Without source=/dev/null,
+  # --source-path=SCRIPTDIR resolves it to this file, and shellcheck follows the
+  # self-include without bound (killed at 2 GB).
+  # shellcheck source=/dev/null
   . "$dir/checks.sh"
   echo "$phase checks ($dir):"
   "$phase"
