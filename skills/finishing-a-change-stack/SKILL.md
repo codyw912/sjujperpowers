@@ -183,7 +183,7 @@ For a `.workspaces/<name>/` directory created by starting-a-change, cleanup runs
 
 If cwd is that workspace, return to the default workspace first. Then `jj workspace forget <name>` and remove the directory.
 
-If subagent-driven development supplied a per-plan recovery workspace, remove only that exact directory after successful local land or confirmed discard. Retain it for pull-request and keep-as-is outcomes so the stack remains resumable.
+If subagent-driven development supplied a per-plan recovery workspace, remove only that exact directory after successful local land or confirmed discard. The rulings file (`<plan>-rulings.md`) is committed in the stack, so deleting the workspace never loses it. Retain the workspace for pull-request and keep-as-is outcomes so the stack remains resumable.
 
 ## Quick Reference
 

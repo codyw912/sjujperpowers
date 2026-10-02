@@ -16,7 +16,7 @@ Repositories may independently choose where roadmap outcomes and durable executi
 | Work decomposition and instructions | Versioned plan |
 | Cross-session claims, dependencies, blockers, completion | Execution provider |
 | Immediate session progress | Harness-native todos |
-| SDD review rounds, rulings, briefs, reports, recovery | Per-plan SDD workspace |
+| SDD review rounds, briefs, reports, recovery; rulings are authored here and retained in the committed `<plan>-rulings.md` | Per-plan SDD workspace |
 | Implementation and landing history | Jujutsu |
 
 Roadmap and execution providers are independent. `file + kata` is as valid as `plane + kata`; Kata never requires Plane.

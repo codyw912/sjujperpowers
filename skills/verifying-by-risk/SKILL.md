@@ -119,7 +119,8 @@ Tier <tier><, protected>. <who or what is affected if this is wrong>
 - Protected paths touched: <list, or none>
 - Setup gaps: <no verify skill / no declared test, each with how to close it; or none>
 - Read these hunks: <file:line ranges the operator should read, and why>
-- Parked findings: <from SDD rulings, or none>
+- Rulings: <link to the committed rulings file, and the count>
+- Parked findings: <from SDD rulings, only those still needing a decision; or none>
 - Not covered: <anything the evidence could not cover>
 ```
 

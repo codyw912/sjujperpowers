@@ -500,16 +500,33 @@ finishing-a-change-stack presents the options.
 
 ## Finish
 
-Before you delete anything, collect every ledger line containing `Ruling:` —
-preflight rulings, parked findings, breaker adjudications, all of them — into
-your final message under "Rulings I made", in the order you made them, each
-with what it costs if wrong. The list is exhaustive: if the ledger holds a
-ruling, the list holds it. That list is the only place the decisions you
-took on your human partner's behalf reach them — they read it and rework
-whatever you got wrong. A ruling that dies with the workspace was a decision
-made in secret.
+After the final whole-branch review and its fix wave, once every residual
+finding is adjudicated — clean or not — run this
+skill's `scripts/export-rulings PLAN_FILE`. Export last, after the final
+ledger ruling. It writes every ledger line
+containing `Ruling:` — preflight rulings, parked findings, breaker
+adjudications, all of them, in the order you made them — plus every
+`over fix-round budget` line, to `<plan-basename>-rulings.md` next to the
+plan, and prints that path. Commit that file by name as its own change:
+`jj commit <path> -m "Record rulings for <plan>"`. Do it before
+sjujperpowers:verifying-by-risk, because committing moves the head the
+verdict covers. The committed file is the only place the decisions you took on
+your human partner's behalf outlive the workspace, with any execution
+provider. They read it and rework whatever you got wrong. A ruling that dies
+with the workspace was a decision made in secret.
 
-When the final whole-branch review is clean and its fixes are merged, run sjujperpowers:verifying-by-risk on the stack. Put the collected rulings under the brief's Attention as parked findings. Also collect every ledger line starting `Task <N>: over fix-round budget` and list those tasks in your final message under "Over fix-round budget", each with its open findings; they go to the brief's Attention under parked findings too. Then hand the plan path, recovery-workspace path, Kata parent/child refs, verification commands, collected rulings, over-budget tasks, and the operator brief to sjujperpowers:finishing-a-change-stack.
+If a ruling is added after the export, re-run `scripts/export-rulings` and
+fold the file into the rulings change with
+`jj squash --into <rulings change> <path>`, before verifying-by-risk.
+
+Then run sjujperpowers:verifying-by-risk on the stack. Your final message and
+the brief's Attention link the committed rulings file and give the count. List
+inline only the parked findings that still need your human partner's decision,
+and the tasks under "Over fix-round budget" with their open findings.
+Optionally copy the file into the pull request body (pull_request completion)
+or a Kata root comment. Hand the plan path, recovery-workspace path, Kata
+parent/child refs, verification commands, rulings file path, over-budget
+tasks, and the operator brief to sjujperpowers:finishing-a-change-stack.
 
 Do not delete the per-plan recovery workspace yet. Finishing removes it only after a successful local landing or confirmed discard. Pull-request and keep-as-is outcomes retain it because the stack remains resumable.
 
