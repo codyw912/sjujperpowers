@@ -72,14 +72,19 @@ export function snapshot(repo) {
   jj(repo, ['status']);
 }
 
-// @ is empty when jj reports empty=true. Same rule as finishing-a-change-stack.
+// The default head is @, unless @ is an empty single-parent continuation (the
+// fresh change after `jj commit`); then it is @-. An empty merge is the stack head.
+// Same rule as finishing-a-change-stack.
 export function resolveHead(repo, requested) {
   const revset = requested || '@';
   let commit = resolveCommit(repo, revset);
   if (!commit) fail(`cannot resolve head ${requested || '@'}`);
-  if (!requested && rev(repo, commit, 'empty').trim() === 'true') {
-    commit = resolveCommit(repo, '@-');
-    if (!commit) fail('cannot resolve @-');
+  if (!requested) {
+    const [empty, parents] = (rev(repo, commit, 'empty ++ " " ++ parents.len()') || '').trim().split(' ');
+    if (empty === 'true' && parents === '1') {
+      commit = resolveCommit(repo, '@-');
+      if (!commit) fail('cannot resolve @-');
+    }
   }
   const change = rev(repo, commit, 'change_id');
   if (!change || !change.trim()) fail(`cannot resolve change id for ${commit}`);
@@ -108,12 +113,9 @@ export function forkPoint(repo, trunkCommit, headCommit) {
   return commit;
 }
 
-export function changedPaths(repo, from, to) {
-  const template =
-    'json(status) ++ "\\t" ++ json(source.path()) ++ "\\t" ++ json(target.path()) ++ "\\n"';
-  const result = jj(repo, ['diff', '--from', from, '--to', to, '-T', template]);
+function parseRows(stdout) {
   const rows = [];
-  for (const line of result.stdout.split('\n')) {
+  for (const line of stdout.split('\n')) {
     if (!line) continue;
     const parts = line.split('\t');
     if (parts.length !== 3) fail(`unexpected jj diff line: ${line}`);
@@ -122,6 +124,33 @@ export function changedPaths(repo, from, to) {
       from: JSON.parse(parts[1]),
       to: JSON.parse(parts[2]),
     });
+  }
+  return rows;
+}
+
+// The net change: what `from` to `to` looks like as one diff. A path added and
+// deleted again inside the range does not appear.
+export function changedPaths(repo, from, to) {
+  const template =
+    'json(status) ++ "\\t" ++ json(source.path()) ++ "\\t" ++ json(target.path()) ++ "\\n"';
+  const result = jj(repo, ['diff', '--from', from, '--to', to, '-T', template]);
+  return parseRows(result.stdout);
+}
+
+// Every path any commit in `from..to` touched, source and target sides, in one jj
+// call. A merge contributes its own diff against its parents; the commits on its
+// branches are in the range and contribute theirs. Identical rows are listed once.
+export function touchedPaths(repo, from, to) {
+  const template =
+    'self.diff().files().map(|e| json(e.status()) ++ "\\t" ++ json(e.source().path()) ++ "\\t" ++ json(e.target().path()) ++ "\\n").join("")';
+  const result = jj(repo, ['log', '-r', `${from}..${to}`, '--no-graph', '-T', template]);
+  const seen = new Set();
+  const rows = [];
+  for (const row of parseRows(result.stdout)) {
+    const key = JSON.stringify([row.status, row.from, row.to]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push(row);
   }
   return rows;
 }

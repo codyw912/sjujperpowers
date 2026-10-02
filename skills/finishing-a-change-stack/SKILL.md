@@ -26,7 +26,7 @@ The test command is the project's declaration, not your choice. Read it from a f
 `<verifying-by-risk skill dir>` is the directory of the verifying-by-risk skill as the harness loaded it, not a copy found by searching the filesystem. If you cannot resolve it, stop and say so.
 
 - **Reuse** a receipt only at the same head: if `node <verifying-by-risk skill dir>/scripts/verdict.mjs check --repo "$(jj root)"` exits 0, its `row.grade` is `unit-tested` or above, and its `row.runs` holds a passing run of exactly `testCommand` (and of `hk-check` when the repository has an `hk.pkl`), those runs are this step's result. Do not run the suite again. A current row graded `failed`, `blocked`, or `type-check-only` is not a passing receipt.
-- **Run fresh** otherwise, including after any shaping or rebase (each rewrites the head and voids the verdict): run `testCommand` exactly as declared, and `<verifying-by-risk skill dir>/scripts/hk-check` inside the project's dev shell when there is an `hk.pkl`. Jujutsu never fires git hooks, so this is the only place hk runs on the final stack. Never run bare `hk check`: `hk-check` ignores local overrides and environment skips, and exits 2 when git config skips a step, when `--step` names no step, or when the root `hk.pkl` is not tracked in `@`.
+- **Run fresh** otherwise, including after any shaping or rebase (each rewrites the head and voids the verdict): run `testCommand` exactly as declared, and `<verifying-by-risk skill dir>/scripts/hk-check` inside the project's dev shell when there is an `hk.pkl`. Record that run in the ledger as `"command":"hk-check"`, not its path; the ledger matches that exact string. Jujutsu never fires git hooks, so this is the only place hk runs on the final stack. Never run bare `hk check`: `hk-check` ignores local overrides and environment skips, and exits 2 when git config skips a step, when `--step` names no step, or when the root `hk.pkl` is not tracked in `@`.
 - **No `testCommand`** (no `test` in trunk's `risk.toml`, or no `risk.toml`): run the project's conventional suite (`npm test` / `cargo test` / `pytest` / `go test ./...`) and `hk-check` if there is an `hk.pkl`. That run gates the menu, but it is your choice, not the project's declaration. verifying-by-risk treats a missing `test` declaration as a setup gap, so it never lifts the grade above `type-check-only` — whether or not the project has a verify skill. Say so in your Step 5 message.
 
 **If tests fail**, report the failures and stop — the menu comes after a green suite:
@@ -80,7 +80,7 @@ Execute with `jj squash --from <rev> --into <rev>` or `jj squash -r <rev>` (into
 
 **Derive now, after shaping — never earlier:**
 
-- **Head** = `@-` if `@` is empty, else `@`.
+- **Head** = `@-` if `@` is empty with a single parent, else `@`. An empty merge is the head.
 - **Stack-root** = `roots($TRUNK..@)`.
 
 Re-run `jj log -r "$TRUNK..@ & conflicts()"` once more; squashing can surface a conflict.

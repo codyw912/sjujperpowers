@@ -7,6 +7,7 @@ import {
   resolveCommit,
   forkPoint,
   changedPaths,
+  touchedPaths,
   maxTier,
 } from './jj.mjs';
 import { parseRiskToml, classifyPaths } from './policy.mjs';
@@ -21,6 +22,9 @@ function hasVerifySkill(repo, commit) {
 
 // Classify every pending change from the local trunk to head against the
 // policy committed on trunk. The range, trunk, and policy are never inputs.
+// Tier and protection come from the union of paths every commit in the range
+// touched, so a protected path added and reverted later still counts: the
+// intermediate commit is retained history.
 export function classify(repo, { head: headArg, range: rangeArg, raise } = {}) {
   if (raise !== undefined && !TIERS.includes(raise)) fail('--raise must be low, medium, or high');
   const head = resolveHead(repo, headArg);
@@ -39,7 +43,8 @@ export function classify(repo, { head: headArg, range: rangeArg, raise } = {}) {
     }
   }
 
-  const rows = changedPaths(repo, from, head.commit);
+  const rows = touchedPaths(repo, from, head.commit);
+  const netPaths = changedPaths(repo, from, head.commit);
   const shown = jj(
     repo,
     ['file', 'show', '-r', trunk.commit, 'root:".sjujperpowers/risk.toml"'],
@@ -66,5 +71,6 @@ export function classify(repo, { head: headArg, range: rangeArg, raise } = {}) {
     protected: classified.protected,
     protectedPaths: classified.protectedPaths,
     paths: classified.paths,
+    netPaths,
   };
 }

@@ -510,3 +510,110 @@ test('verifySkill is true when a verify skill is on trunk or at head, false othe
   fs.rmSync(path.join(deleted, skill));
   assert.equal(classify(deleted).json.verifySkill, true);
 });
+
+const HIGH_RULE = 'version = 1\ndefault = "low"\n[[rule]]\npaths = ["sensitive/**"]\ntier = "high"\n';
+
+function put(repo, file, body = 'x\n') {
+  fs.mkdirSync(path.dirname(path.join(repo, file)), { recursive: true });
+  fs.writeFileSync(path.join(repo, file), body);
+}
+
+function riskRepo() {
+  const repo = initRepo();
+  writeRisk(repo, HIGH_RULE);
+  jj(repo, ['describe', '-m', 'policy']);
+  return repo;
+}
+
+test('sensitive paths added then deleted in a later commit still classify high and protected', () => {
+  const repo = riskRepo();
+  jj(repo, ['new', '-m', 'add sensitive']);
+  put(repo, 'sensitive/accounting.rs', 'bad\n');
+  put(repo, '.hk/temporary.pkl', 'danger\n');
+  jj(repo, ['new', '-m', 'revert']);
+  fs.rmSync(path.join(repo, 'sensitive/accounting.rs'));
+  fs.rmSync(path.join(repo, '.hk/temporary.pkl'));
+  put(repo, 'low.txt', 'second\n');
+  const out = classify(repo);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.json.tier, 'high');
+  assert.equal(out.json.computedTier, 'high');
+  assert.equal(out.json.protected, true);
+  assert.deepEqual(out.json.protectedPaths, ['.hk/temporary.pkl']);
+  const touched = out.json.paths.flatMap((p) => [p.from, p.to]);
+  assert.ok(touched.includes('sensitive/accounting.rs'));
+  assert.ok(touched.includes('low.txt'));
+  // The net diff is reported separately and holds only the surviving change.
+  assert.deepEqual(out.json.netPaths.map((p) => p.to), ['low.txt']);
+});
+
+test('a protected file renamed away and back still classifies protected', () => {
+  const repo = initRepo();
+  put(repo, 'devenv.nix', 'env\n');
+  jj(repo, ['describe', '-m', 'base with devenv']);
+  jj(repo, ['new', '-m', 'rename away']);
+  fs.renameSync(path.join(repo, 'devenv.nix'), path.join(repo, 'moved.nix'));
+  jj(repo, ['new', '-m', 'rename back']);
+  fs.renameSync(path.join(repo, 'moved.nix'), path.join(repo, 'devenv.nix'));
+  put(repo, 'low.txt', 'work\n');
+  const out = classify(repo);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.json.protected, true);
+  assert.deepEqual(out.json.protectedPaths, ['devenv.nix', 'moved.nix']);
+  assert.deepEqual(out.json.netPaths.map((p) => p.to), ['low.txt']);
+});
+
+test('a merge whose branch touches a high-tier path classifies high', () => {
+  const repo = riskRepo();
+  jj(repo, ['new', '-m', 'side']);
+  put(repo, 'sensitive/side.rs', 'side\n');
+  const side = rev(repo, '@', 'commit_id');
+  jj(repo, ['new', 'main', '-m', 'other']);
+  put(repo, 'other.txt', 'other\n');
+  jj(repo, ['new', side, '@', '-m', 'merge']);
+  put(repo, 'merged.txt', 'merge edit\n');
+  const out = classify(repo);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.json.tier, 'high');
+  const touched = out.json.paths.map((p) => p.to);
+  assert.ok(touched.includes('sensitive/side.rs'));
+  assert.ok(touched.includes('other.txt'));
+  assert.ok(touched.includes('merged.txt'));
+});
+
+test('a merge that reverts its branch\'s sensitive path still classifies high', () => {
+  const repo = riskRepo();
+  jj(repo, ['new', '-m', 'side']);
+  put(repo, 'sensitive/side.rs', 'side\n');
+  const side = rev(repo, '@', 'commit_id');
+  jj(repo, ['new', 'main', '-m', 'other']);
+  put(repo, 'other.txt', 'other\n');
+  jj(repo, ['new', side, '@', '-m', 'merge']);
+  fs.rmSync(path.join(repo, 'sensitive/side.rs'));
+  const out = classify(repo);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.json.tier, 'high');
+  assert.ok(out.json.paths.some((p) => p.to === 'sensitive/side.rs'));
+});
+
+test('an empty merge @ is the head by default, same as --head @', () => {
+  const repo = riskRepo();
+  jj(repo, ['new', '-m', 'side']);
+  put(repo, 'sensitive/side.rs', 'side\n');
+  const side = rev(repo, '@', 'commit_id');
+  jj(repo, ['new', 'main', '-m', 'other']);
+  put(repo, 'other.txt', 'other\n');
+  jj(repo, ['new', side, '@', '-m', 'merge']);
+  assert.equal(rev(repo, '@', 'empty'), 'true');
+  const merge = rev(repo, '@', 'commit_id');
+  const implicit = classify(repo);
+  assert.equal(implicit.status, 0, implicit.stderr);
+  assert.equal(implicit.json.head.commit, merge);
+  assert.equal(implicit.json.tier, 'high');
+  const explicit = classify(repo, ['--head', '@']);
+  assert.equal(explicit.status, 0, explicit.stderr);
+  assert.deepEqual(implicit.json, explicit.json);
+  const targets = implicit.json.paths.map((p) => p.to);
+  assert.ok(targets.includes('sensitive/side.rs'));
+  assert.ok(targets.includes('other.txt'));
+});
