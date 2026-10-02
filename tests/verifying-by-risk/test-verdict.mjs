@@ -537,3 +537,168 @@ test('a verdict recorded before a protected path was added is void after it is',
   assert.equal(voided.json.status, 'void');
   assert.ok(voided.json.reasons.some((reason) => /protected/.test(reason)));
 });
+
+test('live-verified needs a different-family verifier at every tier', () => {
+  const repo = workRepo({ verify: true });
+  for (const [label, verifier] of [['no verifier', undefined], ['same family', 'grok']]) {
+    const refused = append(repo, { grade: 'live-verified', verifier, runs: [receipt()] });
+    assert.equal(refused.status, 2, `${label}: ${refused.stdout}`);
+    assert.match(refused.stderr, /live-verified needs a different-family verifier/, label);
+  }
+  assert.equal(fs.existsSync(ledgerPath(repo)), false);
+  const ok = append(repo, { grade: 'live-verified', verifier: 'claude', runs: [receipt()] });
+  assert.equal(ok.status, 0, ok.stderr);
+  assert.equal(check(repo).json.status, 'current');
+});
+
+test('the latest run of the declared test decides the grade', () => {
+  const repo = workRepo();
+  const passThenFail = append(repo, {
+    grade: 'unit-tested',
+    runs: [receipt(TEST_COMMAND, 0), receipt(TEST_COMMAND, 1)],
+  });
+  assert.equal(passThenFail.status, 2, passThenFail.stdout);
+  assert.match(passThenFail.stderr, /latest run of required command/);
+  assert.equal(fs.existsSync(ledgerPath(repo)), false);
+
+  // A failing run is the only grade a failing latest run allows; blocked does not fit either.
+  const blocked = append(repo, { grade: 'blocked', runs: [receipt(TEST_COMMAND, 1)] });
+  assert.equal(blocked.status, 2, blocked.stdout);
+  const failed = append(repo, {
+    grade: 'failed',
+    runs: [receipt(TEST_COMMAND, 0), receipt(TEST_COMMAND, 1)],
+  });
+  assert.equal(failed.status, 0, failed.stderr);
+
+  const failThenPass = append(repo, {
+    grade: 'unit-tested',
+    runs: [receipt(TEST_COMMAND, 1), receipt(TEST_COMMAND, 0)],
+  });
+  assert.equal(failThenPass.status, 0, failThenPass.stderr);
+  assert.equal(check(repo).json.status, 'current');
+});
+
+test('a failed hk-check blocks every grade but failed when the head tracks hk.pkl', () => {
+  const repo = workRepo();
+  write(repo, 'hk.pkl', 'amends "package://example"\n');
+  const refused = append(repo, {
+    grade: 'unit-tested',
+    runs: [receipt('hk-check', 1), receipt()],
+  });
+  assert.equal(refused.status, 2, refused.stdout);
+  assert.match(refused.stderr, /hk-check/);
+  assert.equal(fs.existsSync(ledgerPath(repo)), false);
+  const failed = append(repo, { grade: 'failed', runs: [receipt('hk-check', 1), receipt()] });
+  assert.equal(failed.status, 0, failed.stderr);
+  const recovered = append(repo, {
+    grade: 'unit-tested',
+    runs: [receipt('hk-check', 1), receipt('hk-check', 0), receipt()],
+  });
+  assert.equal(recovered.status, 0, recovered.stderr);
+  assert.equal(readRows(repo).at(-1).hkRequired, true);
+  assert.equal(check(repo).json.status, 'current');
+});
+
+test('hk-check is exploratory when the head tracks no hk.pkl; other failing commands never constrain', () => {
+  const repo = workRepo();
+  const noHk = append(repo, {
+    grade: 'unit-tested',
+    runs: [receipt('hk-check', 1), receipt()],
+  });
+  assert.equal(noHk.status, 0, noHk.stderr);
+  const exploratory = append(repo, {
+    grade: 'unit-tested',
+    runs: [receipt(), receipt('node scratch.mjs', 1)],
+  });
+  assert.equal(exploratory.status, 0, exploratory.stderr);
+  assert.equal(check(repo).json.status, 'current');
+});
+
+test('check voids a stored row whose range.to is not the head commit', () => {
+  const repo = workRepo();
+  assert.equal(append(repo, { grade: 'unit-tested', runs: [receipt()] }).status, 0);
+  assert.equal(check(repo).json.status, 'current');
+  tamperLastRow(repo, (row) => {
+    row.range.to = '0'.repeat(40);
+  });
+  const voided = check(repo);
+  assert.equal(voided.status, 1);
+  assert.equal(voided.json.status, 'void');
+  assert.deepEqual(voided.json.reasons, ['range.to does not match head']);
+});
+
+test('check voids stored rows whose grade contradicts their own fields or receipts', () => {
+  const edits = [
+    ['live-verified with no verifier or runs', { verify: true, tier: 'high', grade: 'blocked' }, (row) => {
+      row.grade = 'live-verified';
+      row.verifierFamily = null;
+      row.runs = [];
+    }, /different-family verifier/],
+    ['live-verified with no verifier at low tier', { verify: true, grade: 'unit-tested', runs: [receipt()] }, (row) => {
+      row.grade = 'live-verified';
+    }, /live-verified needs a different-family verifier/],
+    ['passing grade after a failing latest run', { grade: 'unit-tested', runs: [receipt()] }, (row) => {
+      row.runs.push({ command: TEST_COMMAND, exit: 1 });
+    }, /latest run of required command/],
+    ['declared test dropped from the row', { grade: 'unit-tested', runs: [receipt()] }, (row) => {
+      row.testCommand = null;
+      row.runs = [];
+    }, /testCommand does not match/],
+    ['verifySkill flipped off', { verify: true, grade: 'blocked' }, (row) => {
+      row.verifySkill = false;
+      row.grade = 'behavior-tested';
+    }, /verifySkill does not match/],
+    ['hkRequired dropped to hide a failed hk-check', { grade: 'failed', runs: [receipt('hk-check', 1)], hk: true }, (row) => {
+      row.hkRequired = false;
+      row.grade = 'unit-tested';
+      row.runs.push(JSON.parse(receipt()));
+    }, /hkRequired does not match/],
+    ['row from before the validator (no hkRequired)', { grade: 'blocked' }, (row) => {
+      delete row.hkRequired;
+    }, /hkRequired does not match/],
+  ];
+  for (const [label, setup, edit, pattern] of edits) {
+    const repo = workRepo({ verify: setup.verify, tier: setup.tier });
+    if (setup.hk) write(repo, 'hk.pkl', 'x\n');
+    const appended = append(repo, {
+      grade: setup.grade,
+      verifier: setup.tier === 'high' ? 'claude' : undefined,
+      runs: setup.runs,
+    });
+    assert.equal(appended.status, 0, `${label}: ${appended.stderr}`);
+    assert.equal(check(repo).json.status, 'current', label);
+    tamperLastRow(repo, edit);
+    const voided = check(repo);
+    assert.equal(voided.status, 1, label);
+    assert.equal(voided.json.status, 'void', label);
+    assert.ok(voided.json.reasons.some((reason) => pattern.test(reason)), `${label}: ${voided.json.reasons}`);
+  }
+});
+
+test('a head that tracks hk.pkl needs an hk-check receipt from type-check-only up', () => {
+  const repo = workRepo();
+  write(repo, 'hk.pkl', 'amends "package://example"\n');
+  for (const grade of ['type-check-only', 'unit-tested']) {
+    const refused = append(repo, { grade, runs: [receipt()] });
+    assert.equal(refused.status, 2, `${grade}: ${refused.stdout}`);
+    assert.match(refused.stderr, /needs a passing run of hk-check/, grade);
+  }
+  assert.equal(fs.existsSync(ledgerPath(repo)), false);
+  // The ledger matches the literal command string: a path-form receipt is not an hk-check run.
+  const pathForm = append(repo, { grade: 'unit-tested', runs: [receipt('/skills/verifying-by-risk/scripts/hk-check', 0), receipt()] });
+  assert.equal(pathForm.status, 2, pathForm.stdout);
+  assert.match(pathForm.stderr, /needs a passing run of hk-check/);
+  assert.equal(append(repo, { grade: 'blocked', runs: [receipt()] }).status, 0);
+  const ok = append(repo, { grade: 'unit-tested', runs: [receipt('hk-check', 0), receipt()] });
+  assert.equal(ok.status, 0, ok.stderr);
+  assert.equal(check(repo).json.status, 'current');
+
+  // A stored row whose hk-check receipt was removed is void.
+  tamperLastRow(repo, (row) => {
+    row.runs = row.runs.filter((item) => item.command !== 'hk-check');
+  });
+  const voided = check(repo);
+  assert.equal(voided.status, 1);
+  assert.equal(voided.json.status, 'void');
+  assert.ok(voided.json.reasons.some((reason) => /needs a passing run of hk-check/.test(reason)));
+});

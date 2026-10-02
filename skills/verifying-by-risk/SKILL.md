@@ -16,16 +16,16 @@ Scale verification to the risk of the whole pending stack, record what actually 
 ## Step 1: Classify
 
 ```bash
-node <this skill dir>/scripts/classify-risk.mjs --repo "$(jj root)" > "$TMPDIR/classification.json"
+CLS=$(mktemp) && node <this skill dir>/scripts/classify-risk.mjs --repo "$(jj root)" > "$CLS"
 ```
 
-Write the JSON outside the repository. A file written inside the working copy gets snapshotted into `@` and changes the head you just classified.
+`mktemp` gives a unique file outside the repository, whatever `TMPDIR` is. A file written inside the working copy gets snapshotted into `@` and changes the head you just classified. Read `$CLS` for the JSON, then `rm -f "$CLS"` when done.
 
 The script resolves everything itself. Do not pass it a range or a policy file:
 
 - **Trunk** is the local trunk bookmark from starting-a-change's `scripts/trunk-rev`, the same boundary finishing uses. Local `main` ahead of `main@origin` is fine (unpushed local landings). Local behind, diverged, or conflicted exits 2.
-- **Head** is `@`, or `@-` when `@` is empty.
-- **Range** is `fork_point(trunk | head)..head`, which covers every pending change in the stack. `--range FROM..TO` is a cross-check only. Any other range exits 2.
+- **Head** is `@`, or `@-` when `@` is an empty single-parent change. An empty merge is the head itself.
+- **Range** is `fork_point(trunk | head)..head`, which covers every pending change in the stack. `--range FROM..TO` is a cross-check only. Any other range exits 2. `tier`, `protected`, and `protectedPaths` come from the union of every path any commit in the range touched, source and target, merges included, so a protected path added and reverted later still counts: the intermediate commit is retained history. `paths` lists that union; `netPaths` is the net `fork_point..head` diff, for the brief only.
 - **Policy** is `.sjujperpowers/risk.toml` as committed on trunk. A stack that edits `risk.toml` is still classified by trunk's copy. With no `risk.toml` on trunk, every change is `high`. A malformed one is also `high`, and `policy.error` says why.
 - **Test command** is `risk.toml`'s `test` on trunk, reported as `testCommand`. You do not choose it.
 - **Verify skill** is `verifySkill`: true when `.agents/skills/verify-*/SKILL.md` exists on trunk or at head. A stack that deletes trunk's verify skill gets no startup exception.
@@ -46,17 +46,18 @@ The JSON is for reading. `verdict.mjs` reclassifies on its own and never reads i
 - **Setup gaps** are never `blocked`; each stops the grade at what actually ran and gets an Attention note. There are exactly two: **no verify skill yet** — `classify-risk.mjs` reports `verifySkill: false` when neither trunk nor head has `.agents/skills/verify-*/SKILL.md`; record recipe evidence as unavailable, the grade stops at the highest level actually earned (at most `unit-tested`), a high-tier row needs no verifier, and Attention points to sjujperpowers:creating-a-verification-skill — and **no declared `test`** — no `test` in trunk's `risk.toml`, or no `risk.toml` on trunk; the grade stops at `type-check-only`, and Attention says to declare `test`. Missing required evidence that is not a setup gap (a verifier, verify recipes, the regression check, a passing run of a declared test when a verify skill exists) is `blocked`.
 - **Different-family verifier:** dispatch it with the model selection your harness provides, giving it the verify skill path and the head commit. If the harness cannot select a model family different from the implementer's, the grade is `blocked`. Never substitute a same-family model. A different-family model that only reviewed the code is a code reviewer, not the verifier, because it did not run the required behavioral checks; record it with `--code-reviewer`.
 - **Regression check against trunk:** run the same test commands on a checkout of the trunk outside the repository, then compare. `W=$(mktemp -d)/trunk; jj workspace add --quiet --name verify-trunk -r <policy.commit> "$W"`, run the commands in `$W`, then `jj workspace forget verify-trunk && rm -rf "$(dirname "$W")"`. Its working copy is a new empty change on top of the trunk, so the trunk itself is never edited.
+- **Required commands** are `testCommand` and, when the head tracks an `hk.pkl`, `hk-check`. Record the hk run as `"command":"hk-check"`, never as its path: the ledger matches the command string exactly, and a path-form receipt counts as no hk run. For each required command, the latest `--run` of that exact command is its result, so a failure followed by a passing re-run counts as passing and a pass followed by a failure does not. Any required command whose latest run exits non-zero leaves `failed` as the only grade. When the head tracks an `hk.pkl`, every grade from `type-check-only` up also needs a passing `hk-check` run; without one the required evidence is missing, so the grade is `blocked`. Runs of other commands are exploratory and never constrain the grade.
 
 **Grade** is the strongest one the evidence supports:
 
 | Grade | Means |
 |---|---|
-| `failed` | a required check failed |
+| `failed` | a required check failed: the latest run of a required command exited non-zero |
 | `blocked` | required evidence could not be produced, for any reason (for example, no different-family verifier, or a declared test with no passing run while a verify skill exists). Setup gaps are not `blocked`; see Step 2 |
 | `type-check-only` | only static checks ran; the ceiling when no `test` is declared, or, with no verify skill, when the declared test has no passing run. No verify skill alone allows up to `unit-tested` |
 | `unit-tested` | static checks and the declared `testCommand` passed |
 | `behavior-tested` | plus verify recipes passed (needs a verify skill) |
-| `live-verified` | plus a different-family verifier ran the verify skill on the final change |
+| `live-verified` | plus a different-family verifier ran the verify skill on the final change (`--verifier-family` set and different from the implementer's, at every tier) |
 
 ## Step 3: Record the verdict
 
@@ -79,12 +80,17 @@ The ledger is `.sjujperpowers/verdicts.jsonl`. On first use the script creates `
 `append` refuses:
 
 - a `high` row graded above `blocked` unless the verifier family differs from the implementer's, when a verify skill exists. A code reviewer never satisfies this;
+- `live-verified` at any tier unless `--verifier-family` is set and differs from the implementer's;
 - `behavior-tested` or `live-verified` at any tier when there is no verify skill (`no verify skill: grade stops at unit-tested`);
+- any grade but `failed` when the latest run of a required command exited non-zero;
+- when the head tracks an `hk.pkl`, any grade from `type-check-only` up with no `hk-check` run (`blocked` fits);
 - a grade of `unit-tested` or above unless a `--run` shows the declared `testCommand`, character for character, exiting 0. No `test` declared on trunk is a setup gap: the grade stops at `type-check-only`. A declared command with no passing run is missing evidence: `blocked` while a verify skill exists, otherwise still capped at `type-check-only`.
+
+`check` runs the same consistency rules on the stored row, so a row edited after `append` (a raised grade, a dropped verifier or run, a changed `testCommand`, `verifySkill`, or `hkRequired`) is void.
 
 Grade, runs, and model families are self-reported. The scripts check the tier, the protected paths, and the revisions, not whether a command really ran. The brief says so.
 
-**A verdict is void** when the head's commit ID, the fork point, or the trunk has moved since the row was written (any rewrite, rebase, squash, or describe), or when a fresh classification disagrees with the row: a stored tier below the recomputed one, or different `protected`/`protectedPaths`. Check with:
+**A verdict is void** when the head's commit ID, the recorded `range.to`, the fork point, or the trunk has moved since the row was written (any rewrite, rebase, squash, or describe), when a fresh classification disagrees with the row (a stored tier below the recomputed one, or different `protected`/`protectedPaths`), or when the row contradicts itself. Check with:
 
 ```bash
 node <this skill dir>/scripts/verdict.mjs check --repo "$(jj root)"
@@ -143,3 +149,5 @@ Give finishing-a-change-stack the brief and the verdict status. Finishing re-che
 | "Tests passed before the rebase." | The verdict is void. Re-run. |
 | "`hk check --all` is the same thing as `hk-check`." | Not with a local override or a skip in git config. Bare hk is not evidence. |
 | "The brief should show the whole diff to be safe." | Link it. Attention names the hunks worth reading. |
+| "I'll record `unit-tested`; the failing re-run was flaky." | The latest run of a required command decides. Re-run it to a pass, or record `failed`. |
+| "`live-verified` is fine, the verifier is the same family at low tier." | `live-verified` needs a different-family verifier at every tier. |

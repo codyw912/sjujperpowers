@@ -98,6 +98,64 @@ function refuseTrackedLedger() {
   }
 }
 
+function hasHkPkl(commit) {
+  return jj(repo, ['file', 'list', '-r', commit, '--', 'root-file:"hk.pkl"']).stdout.trim() !== '';
+}
+
+// One consistency check for a row's grade against its own receipts, verifier,
+// and setup-gap facts. append refuses on the first problem; check/evaluate
+// voids a stored row on any. The required commands are the declared test and,
+// when the head tracks an hk.pkl, hk-check; the latest run of each is its
+// result, and runs of other commands never constrain the grade.
+function consistency({ grade, tier, testCommand, verifySkill, hkRequired, implementer, verifier, runs }) {
+  if (!GRADES.includes(grade)) return [`grade must be one of ${GRADES.join(', ')}`];
+  if (
+    !Array.isArray(runs) ||
+    runs.some((run) => typeof run?.command !== 'string' || typeof run.exit !== 'number')
+  )
+    return ['runs must be a list of {command, exit}'];
+  const problems = [];
+  const rank = GRADES.indexOf(grade);
+  const differentFamily = Boolean(verifier) && verifier !== implementer;
+  // behavior-tested and live-verified need verify recipes; without a verify skill there are none.
+  if (!verifySkill && (grade === 'behavior-tested' || grade === 'live-verified'))
+    problems.push('no verify skill: grade stops at unit-tested');
+  // Code review never satisfies the verifier. Without a verify skill there is nothing for a
+  // verifier to run, so high tier may reach unit-tested without one.
+  if (tier === 'high' && verifySkill && grade !== 'failed' && grade !== 'blocked' && !differentFamily)
+    problems.push('high tier needs a different-family verifier');
+  else if (grade === 'live-verified' && !differentFamily)
+    problems.push('live-verified needs a different-family verifier');
+  const latest = (command) => runs.findLast((run) => run.command === command);
+  const required = [testCommand, hkRequired ? 'hk-check' : null].filter(Boolean);
+  const failing = required.find((command) => latest(command)?.exit !== 0 && latest(command));
+  if (failing && grade !== 'failed') {
+    problems.push(
+      `grade ${grade} contradicts the latest run of required command ${failing} (exit ${latest(failing).exit}); only failed fits`,
+    );
+  }
+  // A missing `test` declaration is a setup gap: the grade stops at
+  // type-check-only either way. A declared command with no passing receipt is
+  // missing required evidence: blocked when a verify skill exists, and still
+  // just capped when there is none.
+  if (rank >= GRADES.indexOf('unit-tested') && !testCommand) {
+    problems.push('risk.toml on trunk declares no test command; grade stops at type-check-only');
+  } else if (
+    !failing &&
+    testCommand &&
+    !latest(testCommand) &&
+    (rank >= GRADES.indexOf('unit-tested') || (verifySkill && grade === 'type-check-only'))
+  ) {
+    problems.push(`grade ${grade} needs a passing run of the declared test command: ${testCommand}`);
+  }
+  // hk-check is the static check of a repo that tracks an hk.pkl, so type-check-only
+  // and above need its receipt; a missing one is missing evidence, which fits blocked.
+  if (hkRequired && !failing && rank >= GRADES.indexOf('type-check-only') && !latest('hk-check')) {
+    problems.push(`grade ${grade} needs a passing run of hk-check: the head tracks an hk.pkl`);
+  }
+  return problems;
+}
+
 function append() {
   if (argv.includes('--classification'))
     fail('append classifies the stack itself; it does not take --classification');
@@ -122,40 +180,18 @@ function append() {
     return run;
   });
   const current = classify(repo, { head: flag(argv, '--head'), raise: flag(argv, '--raise') });
-  // behavior-tested and live-verified need verify recipes; without a verify skill there are none.
-  if (
-    !current.verifySkill &&
-    (grade === 'behavior-tested' || grade === 'live-verified')
-  ) {
-    fail('no verify skill: grade stops at unit-tested');
-  }
-  // Code review never satisfies the verifier. Without a verify skill there is nothing for a
-  // verifier to run, so high tier may reach unit-tested without one.
-  if (
-    current.tier === 'high' &&
-    current.verifySkill &&
-    grade !== 'failed' &&
-    grade !== 'blocked' &&
-    (!verifier || verifier === implementer)
-  ) {
-    fail('high tier needs a different-family verifier');
-  }
-  // A missing `test` declaration is a setup gap: the grade stops at
-  // type-check-only either way. A declared command with no passing receipt is
-  // missing required evidence: blocked when a verify skill exists, and still
-  // just capped when there is none.
-  const hasTestReceipt =
-    current.testCommand && runs.some((run) => run.command === current.testCommand && run.exit === 0);
-  if (GRADES.indexOf(grade) >= GRADES.indexOf('unit-tested')) {
-    if (!current.testCommand) {
-      fail('risk.toml on trunk declares no test command; grade stops at type-check-only');
-    }
-    if (!hasTestReceipt) {
-      fail(`grade ${grade} needs a passing run of the declared test command: ${current.testCommand}`);
-    }
-  } else if (current.testCommand && current.verifySkill && grade === 'type-check-only' && !hasTestReceipt) {
-    fail(`grade type-check-only needs a passing run of the declared test command: ${current.testCommand}`);
-  }
+  const facts = {
+    grade,
+    tier: current.tier,
+    testCommand: current.testCommand,
+    verifySkill: current.verifySkill,
+    hkRequired: hasHkPkl(current.head.commit),
+    implementer,
+    verifier,
+    runs,
+  };
+  const [contradiction] = consistency(facts);
+  if (contradiction) fail(contradiction);
   ensureIgnored();
   refuseTrackedLedger();
   const row = {
@@ -174,6 +210,7 @@ function append() {
     verifierFamily: verifier,
     codeReviewers,
     verifySkill: current.verifySkill,
+    hkRequired: facts.hkRequired,
     timestamp: new Date().toISOString(),
   };
   fs.mkdirSync(ledgerDir, { recursive: true });
@@ -192,6 +229,7 @@ function evaluate(headArg) {
   if (row.commit !== head.commit) reasons.push('commit does not match head');
   if (row.range?.from !== current.range.from)
     reasons.push('range.from is not the current fork point of trunk and head');
+  if (row.range?.to !== head.commit) reasons.push('range.to does not match head');
   if (row.policyCommit !== current.policy.commit)
     reasons.push('policyCommit is not the current trunk commit');
   if (!TIERS.includes(row.tier) || TIERS.indexOf(row.tier) < TIERS.indexOf(current.computedTier))
@@ -199,6 +237,23 @@ function evaluate(headArg) {
   if (row.protected !== current.protected) reasons.push('protected does not match reclassification');
   if (JSON.stringify(row.protectedPaths) !== JSON.stringify(current.protectedPaths))
     reasons.push('protectedPaths do not match reclassification');
+  // The validator reads testCommand, verifySkill, and hkRequired from the row, so
+  // each must still be what a fresh derivation at this head gives.
+  if (row.testCommand !== current.testCommand)
+    reasons.push('testCommand does not match the declaration on trunk');
+  if (row.verifySkill !== current.verifySkill) reasons.push('verifySkill does not match reclassification');
+  if (row.hkRequired !== hasHkPkl(head.commit)) reasons.push('hkRequired does not match hk.pkl at head');
+  for (const problem of consistency({
+    grade: row.grade,
+    tier: row.tier,
+    testCommand: row.testCommand,
+    verifySkill: row.verifySkill,
+    hkRequired: row.hkRequired,
+    implementer: row.implementerFamily,
+    verifier: row.verifierFamily,
+    runs: row.runs,
+  }))
+    reasons.push(`inconsistent row: ${problem}`);
   return { status: reasons.length ? 'void' : 'current', reasons, row, head };
 }
 
