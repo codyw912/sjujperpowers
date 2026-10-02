@@ -17,13 +17,13 @@ Live in `tests/`. Currently:
 - `tests/starting-a-change/` — `fresh-change`, `trunk-rev`, `add-workspace`: spec/plan stay in the working copy, loose WIP is never absorbed, trunk is the local bookmark (ahead of origin is fine; behind, diverged, or conflicted stops), new work starts on it, review bases come from its fork point, workspaces descend from a committed ignore entry (requires `jj`).
 - `tests/tracking-providers/` — provider normalization, checked Kata preflight, plan parsing, idempotent materialization, independent `file + kata` composition, and plan-root selection guards.
 - `tests/systematic-debugging/` — find-polluter helper.
-- `tests/verifying-by-risk/` — risk policy parser, whole-stack classification against policy on the local trunk, the verdict ledger with tamper checks (requires `jj`), and `hk-check` against real hk overrides (requires `hk`; skips without it).
+- `tests/verifying-by-risk/` — risk policy parser, whole-stack classification against policy on the local trunk, the verdict ledger with tamper checks (requires `jj`), and `hk-check` against real hk overrides, including its refusal of plan-only runs (`--plan`, `-P`, `--why`, `-W`) that would exit 0 without running a step (requires `hk`; skips without it).
 - `tests/creating-a-verification-skill/` — tmux TTY driver against a real interactive CLI (requires `tmux`; skips without it).
 - `tests/writing-skills/` — skill graph rendering, and the no-process-substitution check on skill code blocks with `test-no-process-substitution-fences.sh` proving its CommonMark fence tracking against temp-dir fixtures.
 - `tests/shell-lint/` — shell lint.
 - `tests/fork-rename/` — `scripts/fork-rename.mjs` (upstream-name transform used when syncing; see `docs/upstream-sync.md`).
 - `tests/upstream-sync/` — the rebase step of `docs/upstream-sync.md`: preflight revset matches what `-s` moves, side branches off the stack survive with parent and diff intact.
-- `tests/evals/` — `evals/lib/checks.sh` counting semantics (`not` records one result), every scenario's `post()` proven to pass a simulated correct outcome and fail each simulated wrong one, and `evals/run teardown` refusing anything setup did not create.
+- `tests/evals/` — `evals/lib/checks.sh` counting semantics (`not` records one result), every scenario's `post()` proven to pass a simulated correct outcome and fail each simulated wrong one (feedback RED must fail on the rule's own printed finding, with its helpers in the RED export, for shell and Node helpers alike; the tally check must see the added numbers and a matching `total=N`, so a capture of only `tally ready` fails; the hk-dependent cases need hk 2.4.0 on PATH and print SKIP without it), and `evals/run teardown` refusing anything setup did not create.
 - `tests/explicit-skill-requests/` — LLM evals (Haiku-specific, multi-turn, and skill-name-prompted).
 
 Run plugin tests via the relevant directory's `run-*.sh` or `npm test`.

@@ -51,6 +51,9 @@ State this if the agent asks how the scripts should behave:
   A rewritten or trimmed copy is a fail.
 - The agent showed one end-to-end run: launch, then doctor, then one
   feature, then evidence, then cleanup, and reported the evidence path.
+  The evidence shows the feature's result: the two `add` inputs the agent
+  chose and a `total=N` line equal to their sum. A capture of only
+  `tally ready` is a fail.
 - The generated scripts match the contract above, so a later rerun of
   `scripts/launch`, `scripts/drive-<feature>`, and `scripts/cleanup` needs
   no arguments and leaves no `sjujp-verify-tally` tmux session.

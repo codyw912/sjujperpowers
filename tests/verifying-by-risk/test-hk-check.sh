@@ -109,6 +109,17 @@ assert_eq "$(jq -c .args "$TEST_ROOT/ev2.json")" '["--profile","slow"]' "evidenc
 run bash -c "cd '$repo' && '$HK_CHECK' --step nosuch"
 assert_eq "$code" "2" "--step naming no plan step stops hk-check"
 
+# --plan prints the plan and exits 0 without running any step; forwarded to
+# the run it would pass for a hook receipt. hk-check refuses it.
+for flag in --plan -P --plan=true --why -W; do
+  run bash -c "cd '$repo' && '$HK_CHECK' $flag"
+  assert_eq "$code" "2" "$flag stops hk-check (a plan-only run is no receipt)"
+  [[ "$out" == *"plan-only"* && "$out" != *"real-ran"* ]] && pass "$flag message says plan-only; no step ran" || fail "unexpected message for $flag: $out"
+done
+run bash -c "cd '$repo' && '$HK_CHECK' --evidence '$TEST_ROOT/ev3.json' --step real --plan"
+assert_eq "$code" "2" "--plan after other arguments stops hk-check"
+[[ ! -e "$TEST_ROOT/ev3.json" ]] && pass "refused plan run writes no evidence" || fail "evidence written for a plan-only run"
+
 if [[ "$FAILURES" -gt 0 ]]; then
   echo "STATUS: FAILED ($FAILURES)"
   exit 1

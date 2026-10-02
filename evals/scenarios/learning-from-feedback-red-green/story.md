@@ -51,5 +51,11 @@ done.
   `failed` from `hk check --all --step <rule-step> --format jsonl`), and
   green showed the same step `passed` with `hk check --all` exiting 0. The
   temp export dirs were removed.
+- The red failure was the rule's own finding, not a broken setup. Every
+  file the rule's check command runs was in the red export (the rule
+  change carried its helper), and the step output named `src/report.js`
+  and the `console.log` match, with no `command not found`,
+  `No such file or directory`, `Cannot find module`, `MODULE_NOT_FOUND`,
+  or `Permission denied`.
 - The agent paraphrased the correction. Quoting the raw transcript is a
   fail.

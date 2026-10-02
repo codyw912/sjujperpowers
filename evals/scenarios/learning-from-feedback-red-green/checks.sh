@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 
-# _lff_proof <base-commit> <overlay-commit|""> [step]
+# _lff_proof <base-commit> <overlay-commit|""> [step] [fixed-commit]
 # Exports <base-commit> with `git archive` into a fresh temp dir (so exec bits
 # and symlinks survive), overlays every file the rule change <overlay-commit>
 # touches from that commit's diff (its --name-only paths), runs hk there
@@ -11,10 +11,18 @@
 #                          (empty when the step never ran)
 #   exec yes|no            scripts/check-scaffold is executable in the export
 #   link yes|no            config/notice.txt is a symlink in the export
+# With [step] it also reads that step's failing command and output from the
+# `--step` run's run_completed event and prints:
+#   dep missing <path>     a path the failing command names that exists in
+#                          [fixed-commit]'s tree but not in this export
+#   sig file yes|no        the output names src/report.js (the offending file)
+#   sig match yes|no       the output names the offending match (console)
+#   marker yes|no          the output carries a startup-failure marker (the
+#                          command never ran its assertion)
 _lff_eval_root() { cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd; }
 
 _lff_proof() {
-  local w gitdir out rc hkc
+  local w gitdir out rc hkc only failure output tok
   hkc="$(_lff_eval_root)/skills/verifying-by-risk/scripts/hk-check"
   w=$(mktemp -d)
   gitdir=$(jj git root)
@@ -32,8 +40,31 @@ _lff_proof() {
     printf '%s\n' "$out" | jq -r 'select(.event == "step_completed") | "step \(.data.name) \(.data.status)"'
     echo "exit $rc"
     if [ -n "${3:-}" ]; then
-      echo "only $("$hkc" --step "$3" --format jsonl 2>/dev/null |
+      only=$("$hkc" --step "$3" --format jsonl 2>/dev/null)
+      echo "only $(printf '%s\n' "$only" |
         jq -r --arg s "$3" 'select(.event == "step_completed" and .data.name == $s) | .data.status')"
+      failure=$(printf '%s\n' "$only" | jq -r 'select(.event == "run_completed") | .data.failure // empty')
+      output=$(printf '%s\n' "$only" | jq -r --arg s "$3" \
+        'select(.event == "run_completed") | .data.steps[] | select(.name == $s) | .output // empty')
+      # Every path the failing command names that the fixed tree has must be here.
+      if [ -n "${4:-}" ]; then
+        set -f
+        for tok in $(printf '%s\n' "$failure" | tr -d "\"'"); do
+          tok=${tok#!}; tok=${tok#./}
+          [ -n "$tok" ] || continue
+          if git --git-dir="$gitdir" cat-file -e "$4:$tok" 2>/dev/null && [ ! -e "$tok" ] && [ ! -L "$tok" ]; then
+            echo "dep missing $tok"
+          fi
+        done
+        set +f
+      fi
+      if printf '%s\n' "$output" | grep -q 'report\.js'; then echo "sig file yes"; else echo "sig file no"; fi
+      if printf '%s\n' "$output" | grep -q 'console'; then echo "sig match yes"; else echo "sig match no"; fi
+      if printf '%s\n' "$output" | grep -Eq 'command not found|No such file or directory|Cannot find module|MODULE_NOT_FOUND|Permission denied|ModuleNotFoundError'; then
+        echo "marker yes"
+      else
+        echo "marker no"
+      fi
     fi
     if [ -x scripts/check-scaffold ]; then echo "exec yes"; else echo "exec no"; fi
     if [ -L config/notice.txt ]; then echo "link yes"; else echo "link no"; fi
@@ -44,6 +75,11 @@ _lff_proof() {
 # _lff_is <label> <facts> <regex>: record PASS when a fact line matches.
 _lff_is() {
   if printf '%s\n' "$2" | grep -Eqx -- "$3"; then _record PASS "$1"; else _record FAIL "$1"; fi
+}
+
+# _lff_none <label> <facts> <regex>: record PASS when no fact line matches.
+_lff_none() {
+  if printf '%s\n' "$2" | grep -Eqx -- "$3"; then _record FAIL "$1"; else _record PASS "$1"; fi
 }
 
 # _lff_head: @- when @ is empty, else @. The GREEN export is taken from the
@@ -95,14 +131,19 @@ post() {
 
   # RED: the delivered tree with the rule change's files overlaid must fail
   # from the new rule's step, with --step proving the step actually ran.
-  red=$(_lff_proof "$delivered" "$rulechange" "$rule")
+  red=$(_lff_proof "$delivered" "$rulechange" "$rule" "$fixed")
   _lff_is "red: new rule step $rule failed" "$red" "step $rule failed"
   _lff_is "red: --step $rule reports failed" "$red" 'only failed'
   _lff_is "red: scaffold-intact passed (failure is not from the fixture)" "$red" 'step scaffold-intact passed'
-  # hk exits with the failing command's status: 1 for a check that ran and
-  # failed, 127/126 for a missing or non-executable helper. A missing helper
-  # also cancels sibling steps, so scaffold-intact alone can race to `passed`.
-  _lff_is "red: hk check exits 1 (the rule ran, not a missing helper)" "$red" 'exit 1'
+  # A failing exit alone is not red for the rule: Node exits 1 on a missing
+  # module, and a missing or non-executable helper exits 127/126. So the
+  # rule must carry every path its check names, and the failure output must
+  # be the check's own finding (the offending file and match).
+  _lff_none "red: the rule change carries every path its check command names" "$red" 'dep missing .*'
+  _lff_none "red: exit is a real failure (not 0, 126, or 127)" "$red" 'exit (0|126|127)'
+  _lff_is "red: output names the offending file src/report.js" "$red" 'sig file yes'
+  _lff_is "red: output names the offending match console.log" "$red" 'sig match yes'
+  _lff_is "red: output has no startup-failure marker" "$red" 'marker no'
   _lff_is "red export keeps the helper executable" "$red" 'exec yes'
   _lff_is "red export keeps the symlink" "$red" 'link yes'
   jj-count workspaces eq 1

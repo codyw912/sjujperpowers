@@ -2,6 +2,36 @@
 
 _eval_root() { cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd; }
 
+# _tally_result <evidence-dir>: the evidence must show the feature's own result
+# ("add two numbers and read the total"), not just that the app started. The
+# agent picks the numbers, so read them back from the captured screen: the
+# echoed `add N` inputs (at least two) and the last `total=N` line, which must
+# equal their sum.
+_tally_result() {
+  local ev=$1 facts
+  facts=''
+  if [[ -n "$ev" && -d "$ev" ]]; then
+    facts=$(find "$ev" -type f -size +0 -exec cat {} + 2>/dev/null | awk '
+      { gsub(/\r/, "") }
+      /^[> ]*add +-?[0-9]+ *$/ { adds++; sum += $NF }
+      /total=-?[0-9]+/ { match($0, /total=-?[0-9]+/); total = substr($0, RSTART + 6, RLENGTH - 6) + 0; have = 1 }
+      END {
+        if (adds >= 2) print "adds yes"; else print "adds no"
+        if (have && adds >= 2 && total == sum) print "total matches"; else print "total differs"
+      }')
+  fi
+  if printf '%s\n' "$facts" | grep -qx 'adds yes'; then
+    _record PASS "evidence shows at least two add inputs"
+  else
+    _record FAIL "evidence shows at least two add inputs"
+  fi
+  if printf '%s\n' "$facts" | grep -qx 'total matches'; then
+    _record PASS "evidence shows a total=N line equal to the sum of the adds"
+  else
+    _record FAIL "evidence shows a total=N line equal to the sum of the adds"
+  fi
+}
+
 _skill() { printf '.agents/skills/verify-tally'; }
 
 pre() {
@@ -44,5 +74,6 @@ post() {
   ev=''
   [[ -f "$xdg/drive.out" ]] && ev=$(tail -1 "$xdg/drive.out")
   command-succeeds "test -n '$ev' && find '$ev' -type f -size +0 | grep -q ."
+  _tally_result "$ev"
   rm -rf "$xdg"
 }

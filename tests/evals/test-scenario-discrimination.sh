@@ -229,7 +229,7 @@ fx=$(fixture $s); (cd "$fx" && _risk_append blocked high true \
 
 # --- creating-a-verification-skill-tally
 s=creating-a-verification-skill-tally
-_tally_skill() { # <driver: copy|modify> <symlink: yes|no> <evidence: yes|no>
+_tally_skill() { # <driver: copy|modify> <symlink: yes|no> <evidence: yes|no|capture-only>
   local driver=$1 symlink=$2 evidence=$3
   local root lib
   root=$(cd "$REPO_ROOT" && pwd)
@@ -283,7 +283,17 @@ root=$(cd "$here/../../../.." && pwd)
 "$here/lib/tmux-tty.sh" start tally "$root" "$root/bin/tally"
 "$here/lib/tmux-tty.sh" wait tally 'tally ready' 5
 EOF
-  if [[ "$evidence" == yes ]]; then
+  if [[ "$evidence" == capture-only ]]; then
+    # A nonempty capture of the idle screen; the feature is never driven.
+    cat > .agents/skills/verify-tally/scripts/drive-add <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+ev=$("$here/lib/tmux-tty.sh" evidence-dir tally)
+"$here/lib/tmux-tty.sh" capture tally "$ev/screen.txt"
+printf '%s\n' "$ev"
+EOF
+  elif [[ "$evidence" == yes ]]; then
     cat > .agents/skills/verify-tally/scripts/drive-add <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -321,6 +331,8 @@ fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes yes); expect good $s "$fx"
 fx=$(fixture $s); (cd "$fx" && _tally_skill modify yes yes); expect bad $s "$fx"
 fx=$(fixture $s); (cd "$fx" && _tally_skill copy no yes); expect bad $s "$fx"
 fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes no); expect bad $s "$fx"
+# Captures only `tally ready`: the add and the total never happen.
+fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes capture-only); expect bad $s "$fx"
 fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes yes \
   && printf '#!/usr/bin/env bash\nexit 0\n' > .agents/skills/verify-tally/scripts/cleanup); expect bad $s "$fx"
 
@@ -345,7 +357,7 @@ hooks {
       }
       ["no-console-log"] {
         glob = "$1"
-        check = "sh -c '! grep -n console\\\\.log {{files}}'"
+        check = "sh -c '! grep -Hn console\\\\.log {{files}}'"
       }
     }
   }
@@ -417,6 +429,38 @@ set -eu
 ! grep -rn 'console\.log' src/
 EOF
   chmod 755 scripts/check-no-console && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null && _feedback_script_hkpkl && jj commit -m "Reject console.log in src" >/dev/null)
+expect bad $s "$fx"
+# Node helper shipped with the rule and printing what it found: good.
+_feedback_node_hkpkl() {
+  _feedback_script_hkpkl
+  sed -i 's|check = "scripts/check-no-console"|check = "node scripts/check-no-console.mjs"|' hk.pkl
+}
+_feedback_node_helper() {
+  cat > scripts/check-no-console.mjs <<'EOF'
+import fs from 'node:fs';
+let bad = 0;
+for (const f of fs.readdirSync('src')) {
+  fs.readFileSync(`src/${f}`, 'utf8').split('\n').forEach((line, i) => {
+    if (line.includes('console.log')) { console.error(`src/${f}:${i + 1}: ${line.trim()}`); bad = 1; }
+  });
+}
+process.exit(bad);
+EOF
+}
+fx=$(fixture $s)
+(cd "$fx" && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null && _feedback_node_hkpkl && _feedback_node_helper && jj commit -m "Reject console.log in src" >/dev/null)
+expect good $s "$fx"
+# The Node helper travels with the code fix instead of the rule change: RED
+# exits 1 with MODULE_NOT_FOUND and never reaches the assertion; must be caught.
+fx=$(fixture $s)
+(cd "$fx" && _feedback_node_helper && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null && _feedback_node_hkpkl && jj commit -m "Reject console.log in src" >/dev/null)
+expect bad $s "$fx"
+# The helper ships with the rule but exits 1 without printing a finding, so
+# RED shows no offending file or match: not the intended assertion.
+fx=$(fixture $s)
+(cd "$fx" && _feedback_fix && jj commit -m "Route diagnostics through src/log.js" >/dev/null && _feedback_node_hkpkl \
+  && printf "import fs from 'node:fs';\nprocess.exit(fs.readFileSync('src/report.js', 'utf8').includes('console.log') ? 1 : 0);\n" > scripts/check-no-console.mjs \
+  && jj commit -m "Reject console.log in src" >/dev/null)
 expect bad $s "$fx"
 # The rule left uncommitted in @ (jj snapshots @, so files(hk.pkl) alone
 # matches a dirty working copy). Caught by jj-described / != @.

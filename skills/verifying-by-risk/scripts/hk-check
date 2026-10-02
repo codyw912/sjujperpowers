@@ -28,7 +28,8 @@
 # present, the effective skip/exclude settings, the forwarded args, and the
 # plan narrowed by those args as JSON.
 #
-# Exit: hk's own status, or 2 when the configuration cannot be pinned.
+# Exit: hk's own status, or 2 when the configuration cannot be pinned or the
+# arguments ask for a plan-only run (--plan, -P, --why, -W): that exits 0 unrun.
 #
 # Usage: hk-check [--evidence FILE] [hk check args...]
 set -euo pipefail
@@ -38,6 +39,16 @@ if [ "${1:-}" = --evidence ]; then
   evidence=${2:?usage: hk-check [--evidence FILE] [hk check args...]}
   shift 2
 fi
+
+# --plan (and --why, which implies it) makes hk print the plan and exit 0
+# without running a step, so forwarding it would pass for a hook receipt.
+for arg in "$@"; do
+  case $arg in
+    --plan|--plan=*|-P|--why|--why=*|-W)
+      echo "hk-check: $arg is plan-only: hk exits 0 without running any step, which is no hook receipt; use hk directly to read the plan" >&2
+      exit 2 ;;
+  esac
+done
 
 root=$(jj root 2>/dev/null) || { echo "hk-check: not in a jj repository" >&2; exit 2; }
 [ -f "$root/hk.pkl" ] || { echo "hk-check: no hk.pkl at the repository root ($root); hk-conventions keep it there" >&2; exit 2; }
@@ -98,14 +109,14 @@ for arg in "$@"; do
 done
 
 # The evidence records the plan the run actually uses: the forwarded args,
-# minus flags that only affect output (--format, --json, --plan).
+# minus flags that only affect output (--format, --json).
 plan_args=()
 fmt_next=
 for arg in "$@"; do
   if [ -n "$fmt_next" ]; then fmt_next=; continue; fi
   case $arg in
     --format) fmt_next=1 ;;
-    --format=*|--json|-J|--plan|-P) ;;
+    --format=*|--json|-J) ;;
     *) plan_args+=("$arg") ;;
   esac
 done

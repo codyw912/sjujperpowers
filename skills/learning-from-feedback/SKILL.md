@@ -55,7 +55,7 @@ Do not interrupt the operator per rule, and do not land anything before the batc
 
 Each approved rule is **its own change**, separate from any code fix:
 
-1. **Red:** run the check against the corrected version, the revision before the fix. It must fail, and the failure must come from the new rule's step. Export that revision's tree outside the repository, overlay only the new check files from the fixed working copy, and give the export a Git repository, because hk needs one.
+1. **Red:** run the check against the corrected version, the revision before the fix. It must fail, and the failure must come from the new rule's step. Export that revision's tree outside the repository, overlay only the new check files from the fixed working copy, and give the export a Git repository, because hk needs one. The rule change carries every file its check command runs: a helper left in the fix commit is missing from this export.
 
    Export with `git archive`, the one git command this skill uses: `jj file show` writes every file as a plain non-executable file, so executable helpers and symlinks would be lost and the proof would fail or pass for the wrong reason. `jj git root` makes the command work in non-colocated repositories too.
 
@@ -70,14 +70,19 @@ Each approved rule is **its own change**, separate from any code fix:
    git --git-dir="$GITDIR" archive "$FIXED" hk.pkl | tar -x -C "$W"    # and each other new check file, at the same path
    jj git init --colocate "$W" >/dev/null 2>&1
    (cd "$W" && <verifying-by-risk skill dir>/scripts/hk-check --step <rule-step> --format jsonl 2>/dev/null \
-     | jq -r 'select(.event == "step_completed" and .data.name == "<rule-step>") | .data.status')
+     | jq -r 'select(.event == "run_completed") | .data | "failure: \(.failure)", (.steps[] | "\(.name) \(.status):", (.output // ""))')
    rm -rf "$W"
    ```
 
-   Require the output `failed`. No output means the step never ran: `hk check --step NAME` exits 0 when NAME matches no step, so the exit status alone proves nothing. A different failing step is not red for this rule.
+   Read the output, not just the status. Require all of these:
+
+   - the `<rule-step> failed:` line is present. No output means the step never ran: `hk check --step NAME` exits 0 when NAME matches no step, so the exit status alone proves nothing. A different failing step is not red for this rule;
+   - every path in the `failure:` command that exists in the fixed tree also exists in the export, so a missing helper is caught;
+   - the output names the violation you predicted before running, the offending file and match. A learned rule's check must print what it found, for example `grep -Hn` rather than `grep -q`;
+   - the output has no startup-failure marker: `command not found`, `No such file or directory`, `Cannot find module`, `MODULE_NOT_FOUND`, `Permission denied`, or `ModuleNotFoundError`. Node exits 1 on a missing module, so exit 1 does not prove the assertion ran.
 2. **Green:** export the fixed working copy the same way into a fresh `W=$(mktemp -d)` with `git --git-dir="$GITDIR" archive "$FIXED" | tar -x -C "$W"`, run `jj git init --colocate "$W"`, and run there, then `rm -rf "$W"`:
 
-   - the same `hk-check --step <rule-step> --format jsonl` pipeline must print `passed`;
+   - the same `hk-check --step <rule-step> --format jsonl` pipeline must print `<rule-step> passed:`;
    - `hk-check` must exit 0.
 
    Run hk only through `hk-check`: a git-ignored `hk.local.pkl` or an `HK_SKIP_STEPS` in your environment would otherwise change what red and green prove.
