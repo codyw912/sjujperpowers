@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -41,6 +41,7 @@ test('missing config preserves file and session defaults', async () => {
     docsRoot: 'docs/project',
     roadmap: { provider: 'file' },
     execution: { provider: 'session', completion: 'landed' },
+    sdd: { fixRounds: 3 },
   });
 });
 
@@ -57,6 +58,7 @@ test('plane and kata configuration is normalized', () => {
         project: 'sjujperpowers',
         completion: 'pull_request',
       },
+      sdd: { fixRounds: 3 },
     },
   );
 });
@@ -77,6 +79,7 @@ test('roadmap and execution slots remain independent', () => {
       docsRoot: 'docs/project',
       roadmap: { provider: 'file' },
       execution: { provider: 'kata', project: 'repo', completion: 'landed' },
+      sdd: { fixRounds: 3 },
     },
   );
 });
@@ -88,7 +91,34 @@ test('omitted provider objects receive defaults', () => {
     docsRoot: 'docs/project',
     roadmap: { provider: 'file' },
     execution: { provider: 'session', completion: 'landed' },
+    sdd: { fixRounds: 3 },
   });
+});
+
+test('sdd.fixRounds defaults to 3 when sdd is omitted or empty', () => {
+  assert.deepEqual(normalizeConfig({ version: 1, sdd: {} }, '/repo/config.json').sdd, {
+    fixRounds: 3,
+  });
+});
+
+test('custom sdd.fixRounds is loaded from the config file', async () => {
+  const root = await fixture({ version: 1, sdd: { fixRounds: 5 } });
+  try {
+    const config = await resolveConfig(root, { runtimeCheck: false });
+
+    assert.deepEqual(config.sdd, { fixRounds: 5 });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('sdd.fixRounds accepts the inclusive bounds 1 and 10', () => {
+  for (const fixRounds of [1, 10]) {
+    assert.equal(
+      normalizeConfig({ version: 1, sdd: { fixRounds } }, '/repo/config.json').sdd.fixRounds,
+      fixRounds,
+    );
+  }
 });
 
 test('custom project docs root is loaded and normalized', async () => {
@@ -131,6 +161,13 @@ for (const [name, config, field] of [
   ['project on session provider', { version: 1, execution: { provider: 'session', project: 'x' } }, 'execution.project'],
   ['invalid completion', { version: 1, execution: { provider: 'session', completion: 'verified' } }, 'execution.completion'],
   ['unknown execution key', { version: 1, execution: { provider: 'none', typo: true } }, 'execution.typo'],
+  ['sdd.fixRounds of 0', { version: 1, sdd: { fixRounds: 0 } }, 'sdd.fixRounds'],
+  ['sdd.fixRounds of 11', { version: 1, sdd: { fixRounds: 11 } }, 'sdd.fixRounds'],
+  ['fractional sdd.fixRounds', { version: 1, sdd: { fixRounds: 2.5 } }, 'sdd.fixRounds'],
+  ['string sdd.fixRounds', { version: 1, sdd: { fixRounds: '3' } }, 'sdd.fixRounds'],
+  ['null sdd.fixRounds', { version: 1, sdd: { fixRounds: null } }, 'sdd.fixRounds'],
+  ['unknown sdd key', { version: 1, sdd: { typo: true } }, 'sdd.typo'],
+  ['non-object sdd', { version: 1, sdd: 3 }, 'sdd'],
 ]) {
   test(`${name} fails closed`, () => {
     assert.throws(

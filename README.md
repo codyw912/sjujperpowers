@@ -127,6 +127,8 @@ The roadmap and execution slots are independent: `file + kata` and `plane + sess
 
 `docsRoot` controls the repository-relative root for the roadmap, specs, and plans. It defaults to `docs/project`; set it in the same file, for example to `"engineering/project"`, to match an existing documentation layout.
 
+`"sdd": { "fixRounds": N }` sets the per-task fix-round budget for subagent-driven-development (integer 1–10, default 3).
+
 A Plane roadmap with Kata execution:
 
 ```json

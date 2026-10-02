@@ -37,6 +37,9 @@ A repository may commit `.sjujperpowers/config.json`:
     "provider": "kata",
     "project": "example-product",
     "completion": "landed"
+  },
+  "sdd": {
+    "fixRounds": 3
   }
 }
 ```
@@ -52,7 +55,8 @@ No file means:
   "version": 1,
   "docsRoot": "docs/project",
   "roadmap": { "provider": "file" },
-  "execution": { "provider": "session", "completion": "landed" }
+  "execution": { "provider": "session", "completion": "landed" },
+  "sdd": { "fixRounds": 3 }
 }
 ```
 
@@ -71,6 +75,8 @@ Supported execution providers:
 - `none` — no persistent execution state beyond the plan and current conversation.
 
 `completion` is `landed` by default and may be `pull_request`.
+
+`sdd.fixRounds` is the optional cap on fix rounds per task in subagent-driven-development: an integer from 1 to 10, default 3. The resolver always prints it. Unknown keys under `sdd` are invalid.
 
 ## Resolve before mutation
 

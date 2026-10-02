@@ -10,12 +10,16 @@ import { promisify } from 'node:util';
 const execFile = promisify(execFileCallback);
 const DEFAULT_DOCS_ROOT = 'docs/project';
 
+const DEFAULT_FIX_ROUNDS = 3;
+const MAX_FIX_ROUNDS = 10;
+
 const DEFAULT_CONFIG = Object.freeze({
   version: 1,
   configPath: null,
   docsRoot: DEFAULT_DOCS_ROOT,
   roadmap: Object.freeze({ provider: 'file' }),
   execution: Object.freeze({ provider: 'session', completion: 'landed' }),
+  sdd: Object.freeze({ fixRounds: DEFAULT_FIX_ROUNDS }),
 });
 
 class CliUsageError extends Error {}
@@ -115,9 +119,21 @@ function normalizeExecution(raw, configPath) {
   return { provider, completion };
 }
 
+function normalizeSdd(raw, configPath) {
+  if (raw === undefined) return { fixRounds: DEFAULT_FIX_ROUNDS };
+  if (!isObject(raw)) throw invalid(configPath, 'sdd', 'must be an object');
+  rejectUnknownKeys(raw, ['fixRounds'], configPath, 'sdd');
+
+  const fixRounds = raw.fixRounds === undefined ? DEFAULT_FIX_ROUNDS : raw.fixRounds;
+  if (!Number.isInteger(fixRounds) || fixRounds < 1 || fixRounds > MAX_FIX_ROUNDS) {
+    throw invalid(configPath, 'sdd.fixRounds', `must be an integer from 1 to ${MAX_FIX_ROUNDS}`);
+  }
+  return { fixRounds };
+}
+
 export function normalizeConfig(raw, configPath) {
   if (!isObject(raw)) throw invalid(configPath, 'root', 'must be an object');
-  rejectUnknownKeys(raw, ['version', 'docsRoot', 'roadmap', 'execution'], configPath, 'root');
+  rejectUnknownKeys(raw, ['version', 'docsRoot', 'roadmap', 'execution', 'sdd'], configPath, 'root');
   if (raw.version !== 1) throw invalid(configPath, 'version', 'must equal 1');
 
   return {
@@ -126,6 +142,7 @@ export function normalizeConfig(raw, configPath) {
     docsRoot: normalizeDocsRoot(raw.docsRoot, configPath),
     roadmap: normalizeRoadmap(raw.roadmap, configPath),
     execution: normalizeExecution(raw.execution, configPath),
+    sdd: normalizeSdd(raw.sdd, configPath),
   };
 }
 

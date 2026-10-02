@@ -195,7 +195,7 @@ EOF
   _bookmark_main_at_parent
 }
 
-# Mid-SDD-execution: Task 1 complete, Task 2 at fix round 1/5 with two
+# Mid-SDD-execution: Task 1 complete, Task 2 at fix round 1/3 with two
 # open quality findings (unnamed 3600/60 and triplicated padStart),
 # Task 3 unstarted. Ledger + brief + report + review package live in
 # the ignored plan-scoped workspace. Used by sdd-re-review-scoped.
@@ -375,11 +375,12 @@ EOF
   "$scripts/task-brief" "$plan_rel" 2 >/dev/null
   cat > .sjujperpowers/sdd/metrics-plan/progress.md <<EOF
 # SDD ledger — plan: ${plan_rel}
+Fix-round budget: 3
 Task 1: complete (changes ${base_change}..${task1_change}, review clean)
 Task 2: implementer DONE (changes ${task1_change}..${task2_change})
 Task 2 implementer model: claude-haiku-4-5 (cheapest tier)
 Task 2: FIX_BASE ${round1_commit}
-Task 2: fix round 1/5 (1 addressed, 2 open — magic numbers 3600 and 60 in formatDuration lack named constants; repeated formatting expression; changes ${task2_change}..${round1_change})
+Task 2: fix round 1/3 (1 addressed, 2 open — magic numbers 3600 and 60 in formatDuration lack named constants; repeated formatting expression; changes ${task2_change}..${round1_change})
 EOF
   cat > .sjujperpowers/sdd/metrics-plan/task-2-report.md <<'EOF'
 # Task 2 Report
