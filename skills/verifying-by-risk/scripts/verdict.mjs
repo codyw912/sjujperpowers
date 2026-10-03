@@ -79,8 +79,11 @@ function ensureIgnored() {
       'negations are not allowed in .sjujperpowers/.gitignore; they can un-ignore the ledger',
     );
   }
+  // gitignore keeps leading whitespace as part of the pattern, so ` /verdicts.jsonl`
+  // ignores nothing. Only the CR and unescaped trailing spaces are dropped.
+  const pattern = (line) => line.replace(/\r$/, '').replace(/(?<!\\) +$/, '');
   const covered = lines.some(
-    (line) => line.trim() === '/verdicts.jsonl' || line.trim() === 'verdicts.jsonl',
+    (line) => pattern(line) === '/verdicts.jsonl' || pattern(line) === 'verdicts.jsonl',
   );
   if (!covered) {
     fail('add /verdicts.jsonl to .sjujperpowers/.gitignore before appending a verdict');

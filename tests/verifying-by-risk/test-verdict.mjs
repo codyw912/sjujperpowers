@@ -281,6 +281,27 @@ test('existing gitignore lacking the verdicts entry exits 2 and is not modified'
   assert.equal(fs.existsSync(ledgerPath(repo)), false);
 });
 
+test('a leading-space ledger entry does not ignore the ledger: exits 2, unmodified', () => {
+  const repo = workRepo();
+  const dir = path.join(repo, '.sjujperpowers');
+  for (const prior of [' /verdicts.jsonl\n', '\t/verdicts.jsonl\n', ' verdicts.jsonl\n']) {
+    fs.writeFileSync(path.join(dir, '.gitignore'), prior);
+    const appended = append(repo);
+    assert.equal(appended.status, 2, JSON.stringify(prior));
+    assert.match(appended.stderr, /verdicts\.jsonl/);
+    assert.equal(fs.readFileSync(path.join(dir, '.gitignore'), 'utf8'), prior);
+    assert.equal(fs.existsSync(ledgerPath(repo)), false);
+  }
+});
+
+test('trailing spaces and CRLF on the ledger entry still count as ignoring it', () => {
+  const repo = workRepo();
+  const dir = path.join(repo, '.sjujperpowers');
+  fs.writeFileSync(path.join(dir, '.gitignore'), '/.gitignore\r\n/verdicts.jsonl  \r\n');
+  const appended = append(repo);
+  assert.equal(appended.status, 0, appended.stderr);
+});
+
 test('append refuses a ledger already tracked in @ and names the untrack recovery', () => {
   const repo = workRepo();
   write(repo, '.sjujperpowers/verdicts.jsonl', '');
