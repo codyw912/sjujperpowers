@@ -120,6 +120,27 @@ run bash -c "cd '$repo' && '$HK_CHECK' --evidence '$TEST_ROOT/ev3.json' --step r
 assert_eq "$code" "2" "--plan after other arguments stops hk-check"
 [[ ! -e "$TEST_ROOT/ev3.json" ]] && pass "refused plan run writes no evidence" || fail "evidence written for a plan-only run"
 
+# clap also takes clustered short flags and attached values, so exact-match
+# refusal is not enough: -qP and -Wreal are plan-only too.
+for flag in -qP -Wreal -PW -qaW -nvP; do
+  run bash -c "cd '$repo' && '$HK_CHECK' $flag"
+  assert_eq "$code" "2" "$flag stops hk-check (clustered plan-only flag)"
+  [[ "$out" == *"plan-only"* && "$out" != *"real-ran"* ]] && pass "$flag message says plan-only; no step ran" || fail "unexpected message for $flag: $out"
+done
+run bash -c "cd '$repo' && '$HK_CHECK' --step real -qP"
+assert_eq "$code" "2" "-qP after a long option's value stops hk-check"
+
+# A value is not a flag: the P/W in these are option values, so hk-check runs
+# the committed step (exit 1) instead of refusing (exit 2).
+for args in "--step real -qn" "-Sreal" "-S real" "--format=jsonl" "-eP" "-e P" "-gW" "--glob P" "--exclude=W"; do
+  run bash -c "cd '$repo' && '$HK_CHECK' $args"
+  [[ "$code" != 2 && "$out" != *"plan-only"* ]] && pass "$args is not mistaken for a plan-only flag" || fail "$args refused as plan-only (code $code): $out"
+done
+# After -- nothing is an option, so hk-check's own scan stops there (hk then
+# rejects file arguments with --all, which is not the plan-only refusal).
+run bash -c "cd '$repo' && '$HK_CHECK' -- -P"
+[[ "$out" != *"plan-only"* ]] && pass "-P after -- is not scanned as a flag" || fail "-P after -- refused as plan-only: $out"
+
 if [[ "$FAILURES" -gt 0 ]]; then
   echo "STATUS: FAILED ($FAILURES)"
   exit 1

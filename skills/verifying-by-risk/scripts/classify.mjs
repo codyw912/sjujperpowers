@@ -13,6 +13,7 @@ import {
 import { parseRiskToml, classifyPaths } from './policy.mjs';
 
 const VERIFY_SKILL = 'root-glob:".agents/skills/verify-*/SKILL.md"';
+const RISK_TOML = 'root-file:".sjujperpowers/risk.toml"';
 
 // Trunk OR head: a stack that deletes trunk's verify skill gets no startup
 // exception, and a stack that adds one has a skill to run.
@@ -45,14 +46,22 @@ export function classify(repo, { head: headArg, range: rangeArg, raise } = {}) {
 
   const rows = touchedPaths(repo, from, head.commit);
   const netPaths = changedPaths(repo, from, head.commit);
-  const shown = jj(
-    repo,
-    ['file', 'show', '-r', trunk.commit, 'root:".sjujperpowers/risk.toml"'],
-    { allowFail: true },
-  );
-  const policy = { bookmark: trunk.bookmark, commit: trunk.commit, riskToml: shown.status === 0 };
+  // Presence comes from a tree listing, never from `file show` succeeding: a
+  // read error (bad revision, jj failure) must not pass for a missing policy,
+  // which would silently mean "every change is high".
+  const present =
+    jj(repo, ['file', 'list', '-r', trunk.commit, '--', RISK_TOML]).stdout.trim() !== '';
+  const policy = { bookmark: trunk.bookmark, commit: trunk.commit, riskToml: present };
   let parsed = null;
-  if (shown.status === 0) {
+  if (present) {
+    const shown = jj(repo, ['file', 'show', '-r', trunk.commit, '--', RISK_TOML], {
+      allowFail: true,
+    });
+    if (shown.status !== 0) {
+      fail(
+        `cannot read .sjujperpowers/risk.toml at ${trunk.commit}: ${(shown.stderr || shown.stdout || `jj file show exited ${shown.status}`).trim()}`,
+      );
+    }
     try {
       parsed = parseRiskToml(shown.stdout);
     } catch (error) {

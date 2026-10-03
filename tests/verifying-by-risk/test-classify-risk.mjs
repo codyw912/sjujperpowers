@@ -49,9 +49,10 @@ function initRepo() {
   return dir;
 }
 
-function classify(repo, args = []) {
+function classify(repo, args = [], env = process.env) {
   const result = spawnSync(process.execPath, [SCRIPT, '--repo', repo, ...args], {
     encoding: 'utf8',
+    env,
   });
   let json = null;
   try {
@@ -60,6 +61,19 @@ function classify(repo, args = []) {
     json = null;
   }
   return { status: result.status, stdout: result.stdout, stderr: result.stderr, json };
+}
+
+// A PATH directory whose `jj` runs the real one except `file show`, which fails.
+function jjFailingFileShow() {
+  const real = spawnSync('which', ['jj'], { encoding: 'utf8' }).stdout.trim();
+  const dir = tempDir('vbr-bin-');
+  const wrapper = path.join(dir, 'jj');
+  fs.writeFileSync(
+    wrapper,
+    `#!/bin/sh\nfor a in "$@"; do\n  if [ "$a" = show ]; then echo 'simulated read failure' >&2; exit 1; fi\ndone\nexec '${real}' "$@"\n`,
+    { mode: 0o755 },
+  );
+  return { ...process.env, PATH: `${dir}${path.delimiter}${process.env.PATH}` };
 }
 
 function writeRisk(repo, body) {
@@ -250,6 +264,21 @@ test('missing risk.toml classifies every path high', () => {
   assert.equal(out.json.tier, 'high');
   assert.equal(out.json.paths.find((p) => p.to === 'notes.txt').tier, 'high');
   assert.equal(out.json.protected, false);
+});
+
+test('a read error on an existing risk.toml fails classification, not "no policy"', () => {
+  const repo = initRepo();
+  writeRisk(repo, 'version = 1\ndefault = "low"\n');
+  jj(repo, ['describe', '-m', 'policy']);
+  jj(repo, ['bookmark', 'set', 'main', '-r', '@']);
+  jj(repo, ['new', '-m', 'work']);
+  fs.writeFileSync(path.join(repo, 'notes.txt'), 'n\n');
+  assert.equal(classify(repo).status, 0);
+  const out = classify(repo, [], jjFailingFileShow());
+  assert.equal(out.status, 2, out.stdout);
+  assert.match(out.stderr, /cannot read \.sjujperpowers\/risk\.toml/);
+  assert.match(out.stderr, /simulated read failure/);
+  assert.equal(out.json, null);
 });
 
 test('malformed risk.toml fails closed: high plus policy.error, exit 0', () => {

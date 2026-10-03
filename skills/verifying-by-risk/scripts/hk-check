@@ -42,11 +42,36 @@ fi
 
 # --plan (and --why, which implies it) makes hk print the plan and exit 0
 # without running a step, so forwarding it would pass for a hook receipt.
+# clap also accepts short flags clustered (-qP) and with attached values
+# (-Wreal), so single-dash arguments are scanned letter by letter. Short
+# options that take a value (hk check: -e -g -S; global: -j -p) end the scan of
+# their cluster: the rest of the cluster, or the next argument when nothing
+# follows, is a value. Long options that take a separate value
+# are skipped the same way. Nothing after -- is an option.
+plan_only() {
+  echo "hk-check: $1 is plan-only: hk exits 0 without running any step, which is no hook receipt; use hk directly to read the plan" >&2
+  exit 2
+}
+value_next=
 for arg in "$@"; do
+  if [ -n "$value_next" ]; then value_next=; continue; fi
   case $arg in
-    --plan|--plan=*|-P|--why|--why=*|-W)
-      echo "hk-check: $arg is plan-only: hk exits 0 without running any step, which is no hook receipt; use hk directly to read the plan" >&2
-      exit 2 ;;
+    --) break ;;
+    --plan|--plan=*|--why|--why=*) plan_only "$arg" ;;
+    --exclude|--glob|--step|--files0-from|--format|--from-ref|--junit-xml|--sarif|--skip-step|--stash|--to-ref|--cd|--jobs|--profile)
+      value_next=1 ;;
+    --*|-) ;;
+    -?*)
+      letters=${arg#-}
+      for ((i = 0; i < ${#letters}; i++)); do
+        letter=${letters:i:1}
+        case $letter in
+          P|W) plan_only "$arg" ;;
+          e|g|S|j|p)
+            [ $((i + 1)) -eq ${#letters} ] && value_next=1
+            break ;;
+        esac
+      done ;;
   esac
 done
 
