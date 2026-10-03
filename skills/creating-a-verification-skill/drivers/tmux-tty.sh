@@ -29,10 +29,12 @@ case "$cmd" in
     [[ -d "$dir" ]] || die "no such directory: $dir"
     t "$name" has-session -t "$name" 2>/dev/null && die "session $name is already running"
     # The placeholder keeps a pane alive long enough to arm remain-on-exit;
-    # respawn then swaps in the command, which can exit immediately.
+    # respawn then swaps in the command, which can exit immediately. Several
+    # argv words make tmux exec directly, with no default-shell parsing, so
+    # the bash wrapper also keeps a lone "word with spaces" one program name.
     t "$name" -f /dev/null new-session -d -s "$name" -x 200 -y 50 -c "$dir" cat
     t "$name" set-option -t "$name" remain-on-exit on >/dev/null
-    t "$name" respawn-pane -k -t "$name" -c "$dir" "$(printf '%q ' "$@")"
+    t "$name" respawn-pane -k -t "$name" -c "$dir" bash -c 'exec "$@"' bash "$@"
     ;;
   send)
     [[ $# -eq 2 ]] || die "usage: send <name> <text>"

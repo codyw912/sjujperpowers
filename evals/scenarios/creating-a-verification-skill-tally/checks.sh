@@ -2,34 +2,62 @@
 
 _eval_root() { cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd; }
 
+# _final_capture <evidence-dir>: the newest non-empty file, i.e. the last
+# screen the drive script captured. Earlier captures are history; the claim is
+# about where the run ended.
+_final_capture() {
+  # A pipeline, not `< <(…)`: process substitution hangs some agent tool shells.
+  # The loop runs in the pipeline's subshell, so it prints the winner itself.
+  find "$1" -type f -size +0 | sort | {
+    local f best=''
+    while IFS= read -r f; do
+      # Sorted names, so on an mtime tie the later name wins.
+      if [[ -z "$best" || ! "$best" -nt "$f" ]]; then best=$f; fi
+    done
+    printf '%s' "$best"
+  }
+}
+
 # _tally_result <evidence-dir>: the evidence must show the feature's own result
 # ("add two numbers and read the total"), not just that the app started. The
-# agent picks the numbers, so read them back from the captured screen: the
-# echoed `add N` inputs (at least two) and the last `total=N` line, which must
-# equal their sum.
+# agent picks the numbers, so read them back from the final capture only (a
+# capture is the whole visible screen, so earlier captures repeat its adds):
+# the echoed `add N` inputs (at least two) and the last `total=N` line, which
+# must equal their sum.
 _tally_result() {
-  local ev=$1 facts
+  local ev=$1 final facts
   facts=''
-  if [[ -n "$ev" && -d "$ev" ]]; then
-    facts=$(find "$ev" -type f -size +0 -exec cat {} + 2>/dev/null | awk '
+  final=''
+  if [[ -n "$ev" && -d "$ev" ]]; then final=$(_final_capture "$ev"); fi
+  if [[ -n "$final" ]]; then
+    facts=$(awk '
       { gsub(/\r/, "") }
       /^[> ]*add +-?[0-9]+ *$/ { adds++; sum += $NF }
       /total=-?[0-9]+/ { match($0, /total=-?[0-9]+/); total = substr($0, RSTART + 6, RLENGTH - 6) + 0; have = 1 }
       END {
         if (adds >= 2) print "adds yes"; else print "adds no"
         if (have && adds >= 2 && total == sum) print "total matches"; else print "total differs"
-      }')
+      }' "$final")
   fi
   if printf '%s\n' "$facts" | grep -qx 'adds yes'; then
-    _record PASS "evidence shows at least two add inputs"
+    _record PASS "final capture shows at least two add inputs"
   else
-    _record FAIL "evidence shows at least two add inputs"
+    _record FAIL "final capture shows at least two add inputs"
   fi
   if printf '%s\n' "$facts" | grep -qx 'total matches'; then
-    _record PASS "evidence shows a total=N line equal to the sum of the adds"
+    _record PASS "final capture shows a total=N line equal to the sum of the adds"
   else
-    _record FAIL "evidence shows a total=N line equal to the sum of the adds"
+    _record FAIL "final capture shows a total=N line equal to the sum of the adds"
   fi
+}
+
+# The post-check starts a private tmux server and a scratch state directory.
+# Both go away on normal exit, INT and TERM.
+_TALLY_XDG=''
+_tally_cleanup() {
+  tmux -L sjujp-verify-tally kill-server 2>/dev/null || true
+  if [[ -n "$_TALLY_XDG" ]]; then rm -rf "$_TALLY_XDG"; fi
+  _TALLY_XDG=''
 }
 
 _skill() { printf '.agents/skills/verify-tally'; }
@@ -45,7 +73,7 @@ pre() {
 
 post() {
   requires-tool tmux
-  local skill root drive xdg ev
+  local skill root drive ev
   skill=$(_skill)
   root=$(_eval_root)
 
@@ -64,16 +92,18 @@ post() {
   command-succeeds "'$skill/scripts/doctor'"
 
   drive=$(find "$skill/scripts" -name 'drive-*' -type f -perm -111 | sort | head -1)
-  xdg=$(mktemp -d)
-  command-succeeds "XDG_STATE_HOME='$xdg' '$skill/scripts/launch'"
-  command-succeeds "XDG_STATE_HOME='$xdg' '$drive' > '$xdg/drive.out'"
-  command-succeeds "XDG_STATE_HOME='$xdg' '$skill/scripts/cleanup'"
+  _TALLY_XDG=$(mktemp -d)
+  trap '_tally_cleanup' EXIT
+  trap '_tally_cleanup; exit 130' INT
+  trap '_tally_cleanup; exit 143' TERM
+  command-succeeds "XDG_STATE_HOME='$_TALLY_XDG' '$skill/scripts/launch'"
+  command-succeeds "XDG_STATE_HOME='$_TALLY_XDG' '$drive' > '$_TALLY_XDG/drive.out'"
+  command-succeeds "XDG_STATE_HOME='$_TALLY_XDG' '$skill/scripts/cleanup'"
   command-succeeds "! tmux -L sjujp-verify-tally has-session -t tally"
-  # Fallback so a failed cleanup never leaks the server into the next run.
-  tmux -L sjujp-verify-tally kill-server 2>/dev/null || true
   ev=''
-  [[ -f "$xdg/drive.out" ]] && ev=$(tail -1 "$xdg/drive.out")
+  [[ -f "$_TALLY_XDG/drive.out" ]] && ev=$(tail -1 "$_TALLY_XDG/drive.out")
   command-succeeds "test -n '$ev' && find '$ev' -type f -size +0 | grep -q ."
   _tally_result "$ev"
-  rm -rf "$xdg"
+  _tally_cleanup
+  trap - EXIT INT TERM
 }

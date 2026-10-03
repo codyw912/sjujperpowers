@@ -69,5 +69,40 @@ else
 fi
 "$DRIVER" stop "$FAST"
 
+# Arguments reach the program byte-for-byte whatever tmux's default-shell is:
+# SHELL picks it for the private server (started with -f /dev/null). sh is
+# always present; fish and zsh are checked where installed.
+ARGV="driver-argv-$$"
+trap '"$DRIVER" stop "$NAME" 2>/dev/null || true; "$DRIVER" stop "$FAST" 2>/dev/null || true; "$DRIVER" stop "$ARGV" 2>/dev/null || true; rm -rf "$TEST_ROOT"' EXIT
+cat > "$TEST_ROOT/argv" <<'SH'
+#!/usr/bin/env bash
+out=$1; shift
+printf '%s\0' "$@" > "$out"
+SH
+chmod +x "$TEST_ROOT/argv"
+nasty=$'two  words\tand "dq" \'sq\' $HOME `id` \\back; (x)\nsecond line'
+for shell_name in sh fish zsh; do
+  shell_path=$(command -v "$shell_name" || true)
+  if [[ -z "$shell_path" ]]; then
+    echo "  note: $shell_name not installed; argv fidelity not checked under it"
+    continue
+  fi
+  rm -f "$TEST_ROOT/argv.out" "$TEST_ROOT/argv.want"
+  printf '%s\0%s\0' "$nasty" 'plain' > "$TEST_ROOT/argv.want"
+  SHELL="$shell_path" "$DRIVER" start "$ARGV" "$TEST_ROOT" "$TEST_ROOT/argv" "$TEST_ROOT/argv.out" "$nasty" plain
+  for _ in $(seq 50); do [[ -s "$TEST_ROOT/argv.out" ]] && break; sleep 0.1; done
+  if cmp -s "$TEST_ROOT/argv.out" "$TEST_ROOT/argv.want"; then pass "start passes exact argv under default-shell $shell_name"; else fail "start passes exact argv under default-shell $shell_name"; fi
+  "$DRIVER" stop "$ARGV"
+done
+
+# A single command word with a space is one program name, not a shell line.
+mkdir -p "$TEST_ROOT/dir with space"
+printf '#!/usr/bin/env bash\nprintf "%%s|%%s" "$PWD" "$#" > "$(dirname "$0")/../one.out"\n' > "$TEST_ROOT/dir with space/prog x"
+chmod +x "$TEST_ROOT/dir with space/prog x"
+"$DRIVER" start "$ARGV" "$TEST_ROOT/dir with space" "./prog x"
+for _ in $(seq 50); do [[ -s "$TEST_ROOT/one.out" ]] && break; sleep 0.1; done
+if [[ "$(cat "$TEST_ROOT/one.out" 2>/dev/null)" == "$TEST_ROOT/dir with space|0" ]]; then pass "single command word runs in the given directory without shell parsing"; else fail "single command word runs in the given directory without shell parsing"; fi
+"$DRIVER" stop "$ARGV"
+
 [[ $FAILURES -eq 0 ]] || { echo "$FAILURES failure(s)"; exit 1; }
 echo "All tmux driver tests passed"

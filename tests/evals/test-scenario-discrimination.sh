@@ -229,7 +229,7 @@ fx=$(fixture $s); (cd "$fx" && _risk_append blocked high true \
 
 # --- creating-a-verification-skill-tally
 s=creating-a-verification-skill-tally
-_tally_skill() { # <driver: copy|modify> <symlink: yes|no> <evidence: yes|no|capture-only>
+_tally_skill() { # <driver: copy|modify> <symlink: yes|no> <evidence: yes|no|capture-only|repeat|final-lacks|hang>
   local driver=$1 symlink=$2 evidence=$3
   local root lib
   root=$(cd "$REPO_ROOT" && pwd)
@@ -283,7 +283,51 @@ root=$(cd "$here/../../../.." && pwd)
 "$here/lib/tmux-tty.sh" start tally "$root" "$root/bin/tally"
 "$here/lib/tmux-tty.sh" wait tally 'tally ready' 5
 EOF
-  if [[ "$evidence" == capture-only ]]; then
+  if [[ "$evidence" == repeat ]]; then
+    # Two captures; the second screen still shows both adds and the total, so
+    # the adds are visible twice across the evidence but must count once.
+    cat > .agents/skills/verify-tally/scripts/drive-add <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+ev=$("$here/lib/tmux-tty.sh" evidence-dir tally)
+"$here/lib/tmux-tty.sh" send tally 'add 2'
+"$here/lib/tmux-tty.sh" send tally 'add 3'
+"$here/lib/tmux-tty.sh" send tally 'total'
+"$here/lib/tmux-tty.sh" wait tally 'total=5' 5
+"$here/lib/tmux-tty.sh" capture tally "$ev/01-first.txt"
+"$here/lib/tmux-tty.sh" send tally 'total'
+sleep 0.5
+"$here/lib/tmux-tty.sh" capture tally "$ev/02-final.txt"
+printf '%s\n' "$ev"
+EOF
+  elif [[ "$evidence" == final-lacks ]]; then
+    # The first capture has the right total; the app is then restarted and the
+    # final capture is only the idle banner.
+    cat > .agents/skills/verify-tally/scripts/drive-add <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+root=$(cd "$here/../../../.." && pwd)
+ev=$("$here/lib/tmux-tty.sh" evidence-dir tally)
+"$here/lib/tmux-tty.sh" send tally 'add 2'
+"$here/lib/tmux-tty.sh" send tally 'add 3'
+"$here/lib/tmux-tty.sh" send tally 'total'
+"$here/lib/tmux-tty.sh" wait tally 'total=5' 5
+"$here/lib/tmux-tty.sh" capture tally "$ev/01-first.txt"
+"$here/lib/tmux-tty.sh" stop tally
+"$here/lib/tmux-tty.sh" start tally "$root" "$root/bin/tally"
+"$here/lib/tmux-tty.sh" wait tally 'tally ready' 5
+"$here/lib/tmux-tty.sh" capture tally "$ev/02-final.txt"
+printf '%s\n' "$ev"
+EOF
+  elif [[ "$evidence" == hang ]]; then
+    # Launch succeeds, then the drive never returns (until the post-check is killed).
+    cat > .agents/skills/verify-tally/scripts/drive-add <<'EOF'
+#!/usr/bin/env bash
+exec sleep 300
+EOF
+  elif [[ "$evidence" == capture-only ]]; then
     # A nonempty capture of the idle screen; the feature is never driven.
     cat > .agents/skills/verify-tally/scripts/drive-add <<'EOF'
 #!/usr/bin/env bash
@@ -333,6 +377,31 @@ fx=$(fixture $s); (cd "$fx" && _tally_skill copy no yes); expect bad $s "$fx"
 fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes no); expect bad $s "$fx"
 # Captures only `tally ready`: the add and the total never happen.
 fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes capture-only); expect bad $s "$fx"
+# Two captures. The final one still shows both adds plus the total, as the
+# earlier one did: the repeated `add` lines must not be counted twice.
+fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes repeat); expect good $s "$fx"
+# The earlier capture has the right total; the final capture is only the idle
+# banner. Evidence summed across captures would wrongly pass.
+fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes final-lacks); expect bad $s "$fx"
+# Interrupting the post-check mid-drive must still kill its private tmux server
+# and remove its scratch state. The run gets its own process group (setsid, with
+# INT re-enabled, since background jobs start with INT ignored) and the signal
+# goes to the whole group, as a terminal's Ctrl-C would.
+for sig in TERM INT; do
+  fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes hang)
+  perl -e '$SIG{INT} = "DEFAULT"; exec @ARGV' setsid "$RUN" post $s "$fx" >/dev/null 2>&1 &
+  tally_pid=$!
+  for _ in $(seq 100); do tmux -L sjujp-verify-tally has-session -t tally 2>/dev/null && break; sleep 0.1; done
+  sleep 0.3
+  kill "-$sig" -- "-$tally_pid" 2>/dev/null || true
+  wait "$tally_pid" 2>/dev/null || true
+  if tmux -L sjujp-verify-tally has-session -t tally 2>/dev/null; then
+    fail "$s: SIG$sig during the drive leaks the tmux server"
+    tmux -L sjujp-verify-tally kill-server 2>/dev/null || true
+  else
+    pass "$s: SIG$sig during the drive cleans up the tmux server"
+  fi
+done
 fx=$(fixture $s); (cd "$fx" && _tally_skill copy yes yes \
   && printf '#!/usr/bin/env bash\nexit 0\n' > .agents/skills/verify-tally/scripts/cleanup); expect bad $s "$fx"
 
@@ -433,7 +502,8 @@ expect bad $s "$fx"
 # Node helper shipped with the rule and printing what it found: good.
 _feedback_node_hkpkl() {
   _feedback_script_hkpkl
-  sed -i 's|check = "scripts/check-no-console"|check = "node scripts/check-no-console.mjs"|' hk.pkl
+  sed 's|check = "scripts/check-no-console"|check = "node scripts/check-no-console.mjs"|' hk.pkl > "$TMPDIR/hk.pkl.new"
+  mv "$TMPDIR/hk.pkl.new" hk.pkl
 }
 _feedback_node_helper() {
   cat > scripts/check-no-console.mjs <<'EOF'

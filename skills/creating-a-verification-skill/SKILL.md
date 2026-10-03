@@ -52,7 +52,7 @@ Generate a project-owned skill that launches the project, drives its user-facing
    ```
 
    `cleanup` is `"$here/lib/tmux-tty.sh" stop <project>`, plus removing any temporary state that `launch` created.
-5. **Write one `scripts/drive-<feature>` per feature.** It follows the feature file's steps with `send`/`keys`/`wait`, captures the screen after each observable result into the directory printed by `tmux-tty.sh evidence-dir <project>`, and prints that directory as its last line of output. A step whose result never appears fails the script.
+5. **Write one `scripts/drive-<feature>` per feature.** It follows the feature file's steps with `send`/`keys`/`wait`, captures the screen after each observable result into the directory printed by `tmux-tty.sh evidence-dir <project>`, and prints that directory as its last line of output. Its last capture is the finished screen, showing every result the feature promises: a reader of the evidence judges that file, not earlier ones. A step whose result never appears fails the script.
 6. **Write `SKILL.md`** for the project with these sections, in this order:
    - `## Launch`, `## Doctor`, `## Drive`, `## Evidence`, `## Cleanup`, `## Helpers`.
    - Each section names the script and when to run it. Drive lists the features with links to their files. Evidence says where evidence lands (`$XDG_STATE_HOME/sjujperpowers/evidence/<project>/`, outside the repository). Helpers documents the driver commands.
