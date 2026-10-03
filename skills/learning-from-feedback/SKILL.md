@@ -33,7 +33,7 @@ Turn each operator correction into the strongest durable check that would have c
    Pick the first layer that can actually catch it. "Stays with the operator" is a real outcome, not a failure.
 3. **Scope it:**
    - **this repository:** the rule lands here.
-   - **the nix-config template:** there is no shared base yet. Hand the proposal to the operator instead of editing the template.
+   - **the project's template:** when the rule belongs in the template the project was generated from, hand the proposal to the operator instead of editing the template.
    - **Sjujperpowers:** restate it generically, without project names, paths, or details, before it leaves a private project.
 
 ## Present one batch

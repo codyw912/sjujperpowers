@@ -29,7 +29,7 @@
 - Scripts are dependency-free (Node built-ins only). Shell files pass `shellcheck --severity=warning --external-sources --source-path=SCRIPTDIR`.
 - Skill edits follow sjujperpowers:writing-skills: watch the baseline fail before writing the skill, then confirm the agent complies.
 - Behavioral runs use OMP 18.4.4. The installed plugin is the pinned release, so "with the skill available" (GREEN) means the fixture loads this checkout's skills: write `.omp/config.yml` containing `skills: { customDirectories: [<this checkout>/skills] }` and add `.omp/` to the fixture's `.git/info/exclude` so Jujutsu never snapshots it. RED runs use the same config plus `omp --skills='!<skill-name>'`.
-- Out of scope: self-merge, GitHub/Iron policy, homelab pin bumps, GitHub Actions, a shared hk base, the changed-files adapter, verification-skill maintenance mode, a browser driver, pushes.
+- Out of scope: self-merge, publication-policy changes, plugin release or pin bumps, GitHub Actions, a shared hk base, the changed-files adapter, verification-skill maintenance mode, a browser driver, pushes.
 
 ## File Structure
 
@@ -2988,7 +2988,7 @@ Reference for projects whose checks run through [hk](https://hk.jdx.dev). Sjujpe
 ## Layout
 
 - `hk.pkl` at the repository root amends a base: `amends ".hk/base/rust.pkl"`. Projects add or override steps there.
-- `.hk/base/<language>.pkl` is copied from the nix-config template and amends the hk Config package of the same version as the binary.
+- `.hk/base/<language>.pkl` is copied from the project's template and amends the hk Config package of the same version as the binary.
 - `nix/hk.nix` packages the upstream release binary; `devenv.nix` adds `(import ./nix/hk.nix { inherit pkgs; })` to `packages`.
 - `bash scripts/update-hk [vX.Y.Z]` re-pins the binary hashes and every Config package version together. Upgrading means running it and committing the result, not `devenv update`.
 
@@ -3995,7 +3995,7 @@ Turn each operator correction into the strongest durable check that would have c
    Pick the first layer that can actually catch it. "Stays with the operator" is a real outcome, not a failure.
 3. **Scope it:**
    - **this repository:** the rule lands here.
-   - **the nix-config template:** there is no shared base yet. Hand the proposal to the operator instead of editing the template.
+   - **the project's template:** when the rule belongs in the template the project was generated from, hand the proposal to the operator instead of editing the template.
    - **Sjujperpowers:** restate it generically, without project names, paths, or details, before it leaves a private project.
 
 ## Present one batch

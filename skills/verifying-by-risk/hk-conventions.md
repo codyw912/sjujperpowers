@@ -5,7 +5,7 @@ Reference for projects whose checks run through [hk](https://hk.jdx.dev). Sjujpe
 ## Layout
 
 - `hk.pkl` at the repository root amends a base: `amends ".hk/base/rust.pkl"`. Projects add or override steps there.
-- `.hk/base/<language>.pkl` is copied from the nix-config template and amends the hk Config package of the same version as the binary.
+- `.hk/base/<language>.pkl` is copied from the project's template and amends the hk Config package of the same version as the binary.
 - `nix/hk.nix` packages the upstream release binary; `devenv.nix` adds `(import ./nix/hk.nix { inherit pkgs; })` to `packages`.
 - `bash scripts/update-hk [vX.Y.Z]` re-pins the binary hashes and every Config package version together. Upgrading means running it and committing the result, not `devenv update`.
 
