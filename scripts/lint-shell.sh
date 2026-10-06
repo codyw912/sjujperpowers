@@ -207,5 +207,12 @@ if [[ "$strict" == true ]]; then
   shellcheck_args+=("--enable=check-extra-masked-returns,check-set-e-suppressed,quote-safe-variables,deprecate-which,avoid-nullary-conditions")
 fi
 
-shellcheck "${shellcheck_args[@]}" "${files[@]}"
+# One shellcheck process per file: --external-sources follows `source` lines,
+# and a single call over the whole tree once ran without a memory bound.
+# Per-file calls keep any such blow-up to one named file.
+lint_failed=0
+for file in "${files[@]}"; do
+  shellcheck "${shellcheck_args[@]}" "$file" || lint_failed=1
+done
+[[ "$lint_failed" -eq 0 ]] || exit 1
 run_syntax_checks "${files[@]}"

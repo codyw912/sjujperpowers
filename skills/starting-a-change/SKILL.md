@@ -46,9 +46,11 @@ Run this skill's `scripts/fresh-change`. It applies three rules and prints `<cha
 | described | `jj new` on top (`new-on-top`) | a described change is deliberate work; build on it |
 | non-empty + undescribed | `jj new @-` (`new-beside-wip <id>`) | loose WIP stays in its own change beside yours, untouched |
 
-Never `jj new trunk()` — that orphans the spec and plan committed above trunk. Never edit, squash, or abandon the user's change.
+The work must sit on the local trunk bookmark from `scripts/trunk-rev`, the same boundary finishing lands on. If the base is an older trunk commit with nothing of yours above it (another workspace landed since), the script starts on the current trunk instead (`new-on-trunk`, with the WIP id if it stepped aside). If a stack above the base forked from an older trunk, it exits 1 with the `jj rebase` command; relay it and stop. The stack is the user's to move.
 
-If the script warns that no trunk was found (a brand-new local repo: `trunk()` resolves to `root()` and there is no local `main`/`master`/`trunk` bookmark), relay the fix now so finishing works later: `jj bookmark create main -r <base>`. No config change is needed — `scripts/trunk-rev` resolves the trunk at runtime and every skill uses its output where it says `trunk()`.
+Never run `jj new trunk()` (or `jj new <trunk>`) yourself — with a spec or plan committed above trunk, that orphans them. Only the script moves to trunk, and only when nothing of yours sits above the base. Never edit, squash, or abandon the user's change.
+
+If the script exits 1 with trunk-rev's message (local trunk behind, diverged from, or conflicted with `<name>@origin`), relay that message and stop. The boundary is ambiguous until the user reconciles it: behind means `jj bookmark set <name> -r <name>@origin`; diverged or conflicted means rebasing the local-only landings onto `<name>@origin` and setting the bookmark to the result. If it only warns that no trunk was found (a brand-new local repo with no local `main`/`master`/`trunk` bookmark), relay the fix now so finishing works later: `jj bookmark create main -r <base>`. No config change is needed — `scripts/trunk-rev` resolves the trunk at runtime and every skill uses its output where it says `trunk()`.
 
 ## Step 3: Associate Kata work
 

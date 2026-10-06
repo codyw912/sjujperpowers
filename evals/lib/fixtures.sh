@@ -195,7 +195,7 @@ EOF
   _bookmark_main_at_parent
 }
 
-# Mid-SDD-execution: Task 1 complete, Task 2 at fix round 1/5 with two
+# Mid-SDD-execution: Task 1 complete, Task 2 at fix round 1/3 with two
 # open quality findings (unnamed 3600/60 and triplicated padStart),
 # Task 3 unstarted. Ledger + brief + report + review package live in
 # the ignored plan-scoped workspace. Used by sdd-re-review-scoped.
@@ -375,11 +375,12 @@ EOF
   "$scripts/task-brief" "$plan_rel" 2 >/dev/null
   cat > .sjujperpowers/sdd/metrics-plan/progress.md <<EOF
 # SDD ledger — plan: ${plan_rel}
+Fix-round budget: 3
 Task 1: complete (changes ${base_change}..${task1_change}, review clean)
 Task 2: implementer DONE (changes ${task1_change}..${task2_change})
 Task 2 implementer model: claude-haiku-4-5 (cheapest tier)
 Task 2: FIX_BASE ${round1_commit}
-Task 2: fix round 1/5 (1 addressed, 2 open — magic numbers 3600 and 60 in formatDuration lack named constants; repeated formatting expression; changes ${task2_change}..${round1_change})
+Task 2: fix round 1/3 (1 addressed, 2 open — magic numbers 3600 and 60 in formatDuration lack named constants; repeated formatting expression; changes ${task2_change}..${round1_change})
 EOF
   cat > .sjujperpowers/sdd/metrics-plan/task-2-report.md <<'EOF'
 # Task 2 Report
@@ -504,4 +505,199 @@ EOF
 # SDD ledger — plan: docs/project/plans/2026-07-15-report-export.md
 Task 1: complete (changes ${base_change}..${head_change}, review clean)
 EOF
+}
+
+# Node project with risk.toml on main and a two-change stack: a protected
+# high-tier auth edit, then a docs edit that also rewrites risk.toml down to
+# default=low. @ is empty above the stack. Used by verifying-by-risk-protected-stack.
+create_risk_stack() { # <dir>
+  _init_repo "$1"
+  cat > package.json <<'EOF'
+{
+  "name": "session-kit",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}
+EOF
+  mkdir -p test
+  cat > test/smoke.test.js <<'EOF'
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+test('smoke', () => {
+  assert.equal(1 + 1, 2);
+});
+EOF
+  mkdir -p .sjujperpowers
+  cat > .sjujperpowers/risk.toml <<'EOF'
+version = 1
+default = "medium"
+test = "npm test"
+protected = ["src/auth/**"]
+
+[[rule]]
+paths = ["docs/**", "*.md"]
+tier = "low"
+
+[[rule]]
+paths = ["src/auth/**"]
+tier = "high"
+EOF
+  # A verify skill on main, so a high-tier verdict still needs a different-family verifier.
+  mkdir -p .agents/skills/verify-session-kit
+  cat > .agents/skills/verify-session-kit/SKILL.md <<'EOF'
+---
+name: verify-session-kit
+description: Use when verifying session-kit changes
+---
+
+# verify-session-kit
+
+## Launch
+
+Run `npm test` from the repository root.
+
+## Drive
+
+The recipe is `npm test`. It must exit 0.
+
+## Evidence
+
+Keep the `npm test` output.
+
+## Cleanup
+
+Nothing to clean up.
+EOF
+  _commit "initial project scaffolding"
+  _bookmark_main_at_parent
+  jj bookmark create fixture-main -r main >/dev/null 2>&1
+
+  mkdir -p src/auth
+  cat > src/auth/session.js <<'EOF'
+export function session(id) {
+  return { id, ok: true };
+}
+EOF
+  _commit "Add session helper"
+
+  mkdir -p docs
+  cat > docs/usage.md <<'EOF'
+# Usage
+
+Call session(id) to open a session.
+EOF
+  cat > .sjujperpowers/risk.toml <<'EOF'
+version = 1
+default = "low"
+EOF
+  _commit "Document usage and retune risk"
+}
+
+# Interactive tally CLI committed on main, @ empty. Used by
+# creating-a-verification-skill-tally.
+create_tally_cli() { # <dir>
+  _init_repo "$1"
+  mkdir -p bin tests
+  cat > bin/tally <<'EOF'
+#!/usr/bin/env bash
+# Interactive tally. Commands: add N, total, quit.
+set -u
+total=0
+printf 'tally ready\n'
+printf '> '
+while IFS= read -r line; do
+  # shellcheck disable=SC2086
+  set -- $line
+  case "${1:-}" in
+    add) total=$((total + ${2:-0})) ;;
+    total) printf 'total=%s\n' "$total" ;;
+    quit) exit 0 ;;
+    *) ;;
+  esac
+  printf '> '
+done
+EOF
+  chmod +x bin/tally
+  cat > README.md <<'EOF'
+# tally
+
+Interactive counter. Prints `tally ready`, then a `> ` prompt.
+
+Commands: `add N` adds N, `total` prints `total=N`, `quit` exits.
+EOF
+  cat > tests/tally.test.sh <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+out=$(printf 'add 2\nadd 3\ntotal\nquit\n' | bin/tally)
+printf '%s\n' "$out" | grep -q 'tally ready'
+printf '%s\n' "$out" | grep -q 'total=5'
+EOF
+  chmod +x tests/tally.test.sh
+  _commit "Add tally CLI"
+  _bookmark_main_at_parent
+}
+
+# Node project with hk.pkl on main and one described stack change that logs
+# diagnostics with console.log. @ is empty. main also carries an executable
+# helper (scripts/check-scaffold, mode 755) run by the scaffold-intact step,
+# and a relative symlink (config/notice.txt -> ../shared/notice.txt) that the
+# helper requires, so an export that loses either fails the hk run. Used by
+# learning-from-feedback-red-green.
+create_feedback_stack() { # <dir>
+  _init_repo "$1"
+  cat > package.json <<'EOF'
+{
+  "name": "report-kit",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}
+EOF
+  cat > hk.pkl <<'EOF'
+amends "package://github.com/jdx/hk/releases/download/v2.4.0/hk@2.4.0#/Config.pkl"
+
+hooks {
+  ["check"] {
+    steps {
+      ["readme-nonempty"] {
+        glob = "README.md"
+        check = "sh -c 'test -s {{files}}'"
+      }
+      ["scaffold-intact"] {
+        check = "scripts/check-scaffold"
+      }
+    }
+  }
+}
+EOF
+  mkdir -p scripts config shared
+  cat > scripts/check-scaffold <<'EOF'
+#!/bin/sh
+# Fail unless the shared notice is reachable through its symlink.
+set -eu
+test -L config/notice.txt
+test -s config/notice.txt
+EOF
+  chmod 755 scripts/check-scaffold
+  echo "Reports are advisory." > shared/notice.txt
+  ln -s ../shared/notice.txt config/notice.txt
+  cat > README.md <<'EOF'
+# report-kit
+
+Renders a one-line report.
+EOF
+  _commit "initial project scaffolding"
+  _bookmark_main_at_parent
+
+  mkdir -p src
+  cat > src/report.js <<'EOF'
+export function report(label) {
+  console.log("diag", label);
+  return label;
+}
+EOF
+  _commit "Add report helper"
+  jj bookmark create delivered -r @- >/dev/null 2>&1
 }

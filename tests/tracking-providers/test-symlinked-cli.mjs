@@ -29,6 +29,7 @@ test('resolve-config CLI runs through a symlinked skill directory', async () => 
     docsRoot: 'docs/project',
     roadmap: { provider: 'file' },
     execution: { provider: 'session', completion: 'landed' },
+    sdd: { fixRounds: 3 },
   });
 });
 

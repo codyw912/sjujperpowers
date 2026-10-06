@@ -23,6 +23,7 @@ evals/run setup finishing-stack-no-unprompted-discard
 #   builds a throwaway jj repo, runs pre-checks, prints the story and the dir
 cd <printed dir>            # start your agent here and play the story's human
 evals/run post finishing-stack-no-unprompted-discard <printed dir>
+evals/run teardown <printed dir>   # always, even after a failed or abandoned run
 ```
 
 Verdict = every acceptance criterion met (your call, from the transcript)
@@ -44,6 +45,9 @@ misconfigured, not that the agent failed.
 | `tracking-providers-plane` | Plane outcome references flow into specs and plans without a file roadmap | new |
 | `tracking-providers-kata` | checked preflight, named-plan recovery, claim-before-association, and keep-open completion | new |
 | `tracking-providers-kata-landed` | landing-before-close ordering, child-before-root close, and delayed recovery cleanup | new |
+| `verifying-by-risk-protected-stack` | policy from local `main`, whole-stack range, protected override, blocked without a different-family verifier | new |
+| `creating-a-verification-skill-tally` | generated verify-tally layout, reused tmux driver, recorded end-to-end run | new |
+| `learning-from-feedback-red-green` | one approval batch, hk step as its own change, red/green proof | new |
 
 ## Writing one
 

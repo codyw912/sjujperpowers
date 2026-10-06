@@ -72,11 +72,11 @@ digraph process {
         "Spec ✅ and quality approved?" [shape=diamond];
         "Finding conflicts with plan text?" [shape=diamond];
         "Rule on the conflict, ledger the ruling" [shape=box];
-        "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model" [shape=box];
+        "Fix round R of B: resume implementer; R = B ≥ 2: fresh implementer, more capable model" [shape=box];
         "Dispatch scoped re-review (./re-review-prompt.md)" [shape=box];
         "All findings addressed?" [shape=diamond];
-        "R = 5?" [shape=diamond];
-        "Adjudicate each open finding" [shape=box];
+        "R = B?" [shape=diamond];
+        "Ledger over-budget line, adjudicate each open finding" [shape=box];
         "Any load-bearing finding?" [shape=diamond];
         "Rule and continue; stop only if every path forward is a guess" [shape=box];
         "Park findings in ledger with rulings" [shape=box];
@@ -100,15 +100,15 @@ digraph process {
     "Spec ✅ and quality approved?" -> "Append completion to ledger, mark todo complete" [label="yes"];
     "Spec ✅ and quality approved?" -> "Finding conflicts with plan text?" [label="no"];
     "Finding conflicts with plan text?" -> "Rule on the conflict, ledger the ruling" [label="yes"];
-    "Rule on the conflict, ledger the ruling" -> "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model";
-    "Finding conflicts with plan text?" -> "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model" [label="no"];
-    "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model" -> "Dispatch scoped re-review (./re-review-prompt.md)";
+    "Rule on the conflict, ledger the ruling" -> "Fix round R of B: resume implementer; R = B ≥ 2: fresh implementer, more capable model";
+    "Finding conflicts with plan text?" -> "Fix round R of B: resume implementer; R = B ≥ 2: fresh implementer, more capable model" [label="no"];
+    "Fix round R of B: resume implementer; R = B ≥ 2: fresh implementer, more capable model" -> "Dispatch scoped re-review (./re-review-prompt.md)";
     "Dispatch scoped re-review (./re-review-prompt.md)" -> "All findings addressed?";
     "All findings addressed?" -> "Append completion to ledger, mark todo complete" [label="yes"];
-    "All findings addressed?" -> "R = 5?" [label="no"];
-    "R = 5?" -> "Fix round R of 5: R≤3 resume implementer; R≥4 fresh implementer, more capable model" [label="no - next round"];
-    "R = 5?" -> "Adjudicate each open finding" [label="yes - breaker trips"];
-    "Adjudicate each open finding" -> "Any load-bearing finding?";
+    "All findings addressed?" -> "R = B?" [label="no"];
+    "R = B?" -> "Fix round R of B: resume implementer; R = B ≥ 2: fresh implementer, more capable model" [label="no - next round"];
+    "R = B?" -> "Ledger over-budget line, adjudicate each open finding" [label="yes - breaker trips"];
+    "Ledger over-budget line, adjudicate each open finding" -> "Any load-bearing finding?";
     "Any load-bearing finding?" -> "Rule and continue; stop only if every path forward is a guess" [label="yes"];
     "Any load-bearing finding?" -> "Park findings in ledger with rulings" [label="no"];
     "Park findings in ledger with rulings" -> "Append completion to ledger, mark todo complete";
@@ -144,7 +144,7 @@ a ledger file, not only in todos.
   plan's progress: leave it in place and start your own, fresh.
 - Create the ledger with its identity as the first line:
   `# SDD ledger — plan: <plan file path>`.
-- Use sjujperpowers:tracking-providers and retain the normalized provider selection. For Kata, record the materialized parent ref and each `Task <N>: Kata <qualified-ref>` in this recovery ledger. These are recovery pointers, not a second lifecycle ledger.
+- Use sjujperpowers:tracking-providers and retain the normalized provider selection. Read `sdd.fixRounds` from that same checked output as B and record `Fix-round budget: B` in the ledger (default 3). On resume, reuse the ledger's value. For Kata, record the materialized parent ref and each `Task <N>: Kata <qualified-ref>` in this recovery ledger. These are recovery pointers, not a second lifecycle ledger.
 - On resume, reconcile the ledger with `kata show` before dispatch. A closed child without `Task <N>: complete` or with an unfinished review round is a contradiction: stop and resolve it. A complete ledger task with an open Kata child is expected before landing. A claim owned by another actor is a conflict; never force it.
 - The ledger is your recovery map: the change IDs it names survive rebase,
   squash, and describe even when your context no longer remembers creating
@@ -198,7 +198,7 @@ diff's size, complexity, and risk. A small mechanical diff does not need the
 most capable model; a subtle concurrency change does. Scoped re-reviews of
 small fix diffs take a cheap-to-mid tier.
 
-**Fix-loop escalation (rounds 4-5)**: use a model at least one tier above
+**Fix-loop escalation (final round, B ≥ 2)**: use a model at least one tier above
 the implementer that got stuck.
 
 **Always specify the model explicitly when dispatching a subagent.** An
@@ -301,7 +301,7 @@ package is `@` — an empty `@` contributes nothing.
 - If an earlier task parked a finding in the area this task touches, carry
   a pointer to that ledger entry in the dispatch.
 - Record the implementer's agent identity from the dispatch result —
-  fix-loop rounds 1-3 resume this agent.
+  fix-loop rounds before the last resume this agent.
 - Never dispatch multiple implementation subagents in parallel (conflicts).
 
 Template: [implementer-prompt.md](implementer-prompt.md)
@@ -393,19 +393,21 @@ Before the loop starts, two routes leave it immediately:
   the plan mandates it, and do not dispatch a fix that contradicts the plan
   without a recorded ruling.
 Everything else enters the loop. A fix round is one fix dispatch plus one
-scoped re-review. Five rounds maximum per task:
+scoped re-review. B is the Fix-round budget from the ledger; run at most B
+rounds per task:
 
-**Rounds 1-3 — resume the original implementer.** Send it the open findings
+**Rounds 1 to B-1 — resume the original implementer.** (If B = 1, the single
+round resumes the implementer.) Send it the open findings
 verbatim. Its context is intact: it knows the task, the code, and its own
 choices. If your harness cannot send another message to a live subagent,
 dispatch a fresh implementer carrying the brief path, the report-file path,
 and the findings — the report file is the persistent memory either way.
 
-**Rounds 4-5 — dispatch a fresh implementer on a more capable model** (per
+**Round B (B ≥ 2) — dispatch a fresh implementer on a more capable model** (per
 Model Selection), with the brief path, the report-file path, the open
 findings, and this framing: "A prior implementer attempted this task
 [N] times; you own it now. Read the report file for what was tried." A loop
-that survives three resumes usually means the implementer cannot see its
+that survives every resume usually means the implementer cannot see its
 own problem — fresh eyes and a capability bump in one move.
 
 **Every round, either way:** the implementer fixes, re-runs the tests
@@ -427,13 +429,16 @@ findings list. Out-of-scope observations go to the ledger as deferred
 minors — they never extend the loop.
 
 **After each round,** append to the ledger:
-`Task <N>: fix round <R>/5 (<X> addressed, <Y> open — <finding one-liners>; changes <a>..<b>)`
+`Task <N>: fix round <R>/<B> (<X> addressed, <Y> open — <finding one-liners>; changes <a>..<b>)`
 
 Never fix findings yourself in the controller session — your context stays
 clean for coordination, and controller fixes skip review.
 
-**The breaker.** When round 5's re-review still leaves findings open, stop
-dispatching. Adjudicate each open finding yourself — you hold the plan and
+**The breaker.** When round B's re-review still leaves findings open, stop
+dispatching and append this line to the ledger — the task exceeded the
+budget, and Finish reports it:
+`Task <N>: over fix-round budget <B> — <open finding one-liners>`
+Then adjudicate each open finding yourself — you hold the plan and
 the cross-task context the reviewer lacks:
 
 - **The reviewer is wrong, or the point is contestable:** park it —
@@ -471,7 +476,7 @@ With Kata, add a substantive comment to the task child naming the reviewed scope
 ## Final Review
 
 The final whole-branch review gets a package too: run
-`scripts/review-package PLAN_FILE MERGE_BASE @`. MERGE_BASE is the trunk's commit ID: resolve the trunk with the starting-a-change skill's `scripts/trunk-rev` (jj's built-in `trunk()` is `root()` in a local-only repo), then `jj log -r "$TRUNK" --no-graph -T 'commit_id'`. Include the
+`scripts/review-package PLAN_FILE MERGE_BASE @`. MERGE_BASE is where the stack left trunk: `MERGE_BASE=$(<starting-a-change skill dir>/scripts/trunk-rev --fork-point @)`. Not the trunk commit itself: when another workspace landed on local trunk beside the stack, diffing from trunk shows that landing as deletions. If it exits 1, the local trunk disagrees with origin; relay its message and stop. Include the
 printed path in the final review dispatch, so the final reviewer reads
 one file instead of re-deriving the stack diff with jj commands. Dispatch
 on the most capable available model (see Model Selection), using
@@ -495,20 +500,44 @@ finishing-a-change-stack presents the options.
 
 ## Finish
 
-Before you delete anything, collect every ledger line containing `Ruling:` —
-preflight rulings, parked findings, breaker adjudications, all of them — into
-your final message under "Rulings I made", in the order you made them, each
-with what it costs if wrong. The list is exhaustive: if the ledger holds a
-ruling, the list holds it. That list is the only place the decisions you
-took on your human partner's behalf reach them — they read it and rework
-whatever you got wrong. A ruling that dies with the workspace was a decision
-made in secret.
+After the final whole-branch review and its fix wave, once every residual
+finding is adjudicated — clean or not — run this
+skill's `scripts/export-rulings PLAN_FILE`. Export last, after the final
+ledger ruling. It writes every ledger line
+containing `Ruling:` — preflight rulings, parked findings, breaker
+adjudications, all of them, in the order you made them — plus every
+`over fix-round budget` line, to `<plan-basename>-rulings.md` next to the
+plan, and prints that path. Commit that file by name as its own change:
+`jj commit <path> -m "Record rulings for <plan>"`. Do it before
+sjujperpowers:verifying-by-risk, because committing moves the head the
+verdict covers. The committed file is the only place the decisions you took on
+your human partner's behalf outlive the workspace, with any execution
+provider. They read it and rework whatever you got wrong. A ruling that dies
+with the workspace was a decision made in secret.
 
-When the final whole-branch review is clean and its fixes are merged, hand the plan path, recovery-workspace path, Kata parent/child refs, verification commands, and collected rulings to sjujperpowers:finishing-a-change-stack.
+If a ruling is added after the export, re-run `scripts/export-rulings` and
+fold the file into the rulings change with
+`jj squash --into <rulings change> <path>`, before verifying-by-risk.
+
+Then run sjujperpowers:verifying-by-risk on the stack. Your final message and
+the brief's Attention link the committed rulings file and give the count. List
+inline only the parked findings that still need your human partner's decision,
+and the tasks under "Over fix-round budget" with their open findings.
+Optionally copy the file into the pull request body (pull_request completion)
+or a Kata root comment. Hand the plan path, recovery-workspace path, Kata
+parent/child refs, verification commands, rulings file path, over-budget
+tasks, and the operator brief to sjujperpowers:finishing-a-change-stack.
 
 Do not delete the per-plan recovery workspace yet. Finishing removes it only after a successful local landing or confirmed discard. Pull-request and keep-as-is outcomes retain it because the stack remains resumable.
 
 Use sjujperpowers:finishing-a-change-stack.
+
+## Eval Harness Budget
+
+When you run a behavioral RED/GREEN eval, or an eval run the plan prescribes,
+and its harness (fixture, runner, isolation) needs more than one fix before
+the eval can run, stop and report the harness problem to the operator. Do not
+build isolation tooling mid-task.
 
 ## Common Rationalizations
 
@@ -523,6 +552,7 @@ Use sjujperpowers:finishing-a-change-stack.
 | "Reviews slow the loop down" | The loop without reviews is just unverified churn. Reviews are the loop's brakes and steering. |
 | "Ledger bookkeeping is overhead" | The ledger is what survives compaction. Controllers without one have re-dispatched entire completed task sequences. |
 | "The implementer spawned its own reviewer — free extra assurance" | It's a duplicate seat reviewing the same diff; the task review is the gate. A worker-spawned reviewer is a defect to flag, not rigor. |
+| "I'll just add a mount namespace so the eval isolates" | The second harness fix is the stop: report the harness problem to the operator. |
 
 ## Example Workflow
 
@@ -577,7 +607,7 @@ Re-reviewer: Missing progress reporting — ADDRESSED (src/recovery.js:41).
   Magic number — ADDRESSED (src/recovery.js:7). New breakage: none.
   Verdict: all findings addressed.
 
-[Ledger: Task 2: fix round 1/5 (2 addressed, 0 open; changes d4e5f6a..b7c8d9e)]
+[Ledger: Task 2: fix round 1/3 (2 addressed, 0 open; changes d4e5f6a..b7c8d9e)]
 [Ledger: Task 2: complete (changes d4e5f6a..b7c8d9e, review clean)]
 
 ...

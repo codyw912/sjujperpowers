@@ -10,6 +10,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 FRESH="$REPO_ROOT/skills/starting-a-change/scripts/fresh-change"
 TRUNK_REV="$REPO_ROOT/skills/starting-a-change/scripts/trunk-rev"
 ADD_WS="$REPO_ROOT/skills/starting-a-change/scripts/add-workspace"
+REVIEW_PKG="$REPO_ROOT/skills/subagent-driven-development/scripts/review-package"
 
 export JJ_USER=test JJ_EMAIL=test@example.com
 FAILURES=0
@@ -129,7 +130,7 @@ set +e; (cd "$repo" && "$ADD_WS" feat >/dev/null 2>&1); dup_code=$?; set -e
 assert_eq "$dup_code" "2" "duplicate workspace name is refused"
 
 # Case 6: fork topology (origin + newer upstream). jj's built-in trunk() picks by
-# timestamp and flips to main@upstream; trunk-rev must keep main@origin.
+# timestamp and flips to main@upstream; trunk-rev returns the local bookmark.
 fw="$TEST_ROOT/fork"; mkdir -p "$fw/repo"
 git init -q --bare "$fw/origin.git"; git init -q --bare "$fw/upstream.git"
 (cd "$fw/repo" && jj git init >/dev/null 2>&1 && echo a > f && jj commit -m base >/dev/null 2>&1 \
@@ -137,7 +138,7 @@ git init -q --bare "$fw/origin.git"; git init -q --bare "$fw/upstream.git"
   && jj git remote add origin "$fw/origin.git" && jj git remote add upstream "$fw/upstream.git" \
   && jj git push --remote origin -b main >/dev/null 2>&1 \
   && git -C "$fw/upstream.git" fetch -q "$fw/origin.git" main:main && jj git fetch --remote upstream >/dev/null 2>&1)
-assert_eq "$(cd "$fw/repo" && "$TRUNK_REV")" "main@origin main" "origin bookmark preferred when remotes agree"
+assert_eq "$(cd "$fw/repo" && "$TRUNK_REV")" "main main" "local bookmark when it equals origin"
 sleep 1
 (cd "$fw/repo" && echo fork > g && jj commit -m "fork change" >/dev/null 2>&1 && jj bookmark set main -r @- >/dev/null 2>&1 \
   && jj git push --remote origin -b main >/dev/null 2>&1)
@@ -148,8 +149,85 @@ sleep 1
 builtin="$(cd "$fw/repo" && jj log -r 'trunk()' --no-graph -T 'description.first_line()')"
 assert_eq "$builtin" "newer upstream change" "built-in trunk() flips to the newer upstream commit (the hazard)"
 tr_out="$(cd "$fw/repo" && "$TRUNK_REV")"
-assert_eq "$tr_out" "main@origin main" "trunk-rev stays on origin when upstream is newer"
+assert_eq "$tr_out" "main main" "trunk-rev ignores a newer upstream"
 assert_eq "$(cd "$fw/repo" && jj log -r "${tr_out%% *}" --no-graph -T 'description.first_line()')" "fork change" "trunk-rev revset resolves to the fork's head"
+
+# Case 7: local main is one landed change ahead of main@origin (landed, not pushed).
+# The stack finishing shows, the discard target, and the classified range all start
+# at local main, so the landed change is in none of them. A diverged main stops.
+la="$TEST_ROOT/landed-ahead"; mkdir -p "$la/repo"; git init -q --bare "$la/origin.git"
+(cd "$la/repo" && jj git init >/dev/null 2>&1 && echo a > f && jj commit -m base >/dev/null 2>&1 \
+  && jj bookmark create main -r @- >/dev/null 2>&1 && jj git remote add origin "$la/origin.git" \
+  && jj git push --remote origin -b main >/dev/null 2>&1 \
+  && echo landed > landed.txt && jj commit -m "landed change" >/dev/null 2>&1 && jj bookmark set main -r @- >/dev/null 2>&1 \
+  && echo work > work.txt && jj commit -m "stack change" >/dev/null 2>&1)
+set +e; tr_out="$(cd "$la/repo" && "$TRUNK_REV" 2>&1)"; tr_code=$?; set -e
+assert_eq "$tr_code/$tr_out" "0/main main" "local main ahead of origin resolves to local main"
+TRUNK="${tr_out%% *}"
+stack="$(cd "$la/repo" && jj log -r "$TRUNK..@ ~ empty()" --no-graph -T 'description.first_line() ++ "\n"')"
+assert_eq "$stack" "stack change" "shown stack excludes the landed change"
+discard="$(cd "$la/repo" && jj log -r "$TRUNK..@" --no-graph -T 'description.first_line() ++ "|"')"
+[[ "$discard" != *"landed change"* ]] && pass "discard target excludes the landed change" || fail "discard target includes landed change: $discard"
+cls="$(node "$REPO_ROOT/skills/verifying-by-risk/scripts/classify-risk.mjs" --repo "$la/repo")"
+cls_paths="$(node -e 'const c=JSON.parse(process.argv[1]); console.log(c.paths.map(p=>p.to).join(","))' "$cls")"
+assert_eq "$cls_paths" "work.txt" "classified range matches the shown stack"
+git clone -q "$la/origin.git" "$la/other"
+(cd "$la/other" && echo other > other.txt && git add other.txt \
+  && git -c user.name=t -c user.email=t@t commit -qm "other landing" && git push -q origin HEAD:main)
+(cd "$la/repo" && jj git fetch >/dev/null 2>&1)
+set +e; tr_err="$(cd "$la/repo" && "$TRUNK_REV" 2>&1 >/dev/null)"; tr_code=$?; set -e
+assert_eq "$tr_code" "1" "diverged main (conflicted after fetch) stops trunk-rev"
+[[ "$tr_err" == *"conflicted"* ]] && pass "diverged message names the conflict" || fail "unexpected message: $tr_err"
+set +e; (node "$REPO_ROOT/skills/verifying-by-risk/scripts/classify-risk.mjs" --repo "$la/repo" >/dev/null 2>&1); cls_code=$?; set -e
+assert_eq "$cls_code" "2" "diverged main stops classification too"
+(cd "$la/repo" && jj bookmark set main -r 'main@origin-' --allow-backwards >/dev/null 2>&1)
+set +e; tr_err="$(cd "$la/repo" && "$TRUNK_REV" 2>&1 >/dev/null)"; tr_code=$?; set -e
+assert_eq "$tr_code" "1" "local main behind origin stops trunk-rev"
+[[ "$tr_err" == *"behind"* ]] && pass "behind message says behind" || fail "unexpected message: $tr_err"
+set +e; fc_err="$(cd "$la/repo" && "$FRESH" 2>&1 >/dev/null)"; fc_code=$?; set -e
+assert_eq "$fc_code" "1" "local main behind origin stops fresh-change"
+[[ "$fc_err" == *"behind"* ]] && pass "fresh-change relays trunk-rev's message" || fail "unexpected message: $fc_err"
+
+# Case 8: another workspace landed on local main after this work began.
+# fresh-change starts on the current trunk when nothing of ours sits on the old
+# base, and stops with a rebase command when a stack does. Reviews diff from the
+# fork point, so the sibling landing never shows up as a deletion in the stack.
+land_sibling() { # <repo>: another workspace lands l.txt on main beside this one's @
+  local other="$1.other"
+  (cd "$1" && jj workspace add --quiet --name other -r main "$other" >/dev/null 2>&1)
+  (cd "$other" && echo landed > l.txt && jj commit -m "sibling landing" >/dev/null 2>&1 \
+    && jj bookmark set main -r @- >/dev/null 2>&1)
+  (cd "$1" && jj workspace forget other >/dev/null 2>&1)
+}
+repo="$(make_repo stale-empty)"
+land_sibling "$repo"
+out="$(cd "$repo" && "$FRESH")"
+assert_eq "${out#* }" "new-on-trunk" "empty @ on an old trunk moves to the current trunk"
+[[ -f "$repo/l.txt" ]] && pass "new change sees the sibling landing" || fail "new change is still on the old trunk"
+repo="$(make_repo stale-wip)"
+land_sibling "$repo"
+(cd "$repo" && echo scratch > wip.txt)
+wip_id="$(cd "$repo" && jj log -r @ --no-graph -T 'change_id.short()')"
+out="$(cd "$repo" && "$FRESH")"
+assert_eq "${out#* }" "new-on-trunk $wip_id" "loose WIP on an old trunk is stepped aside onto the current trunk"
+[[ -f "$repo/l.txt" && ! -f "$repo/wip.txt" ]] && pass "WIP not absorbed when moving to trunk" || fail "wrong working copy after new-on-trunk"
+assert_eq "$(cd "$repo" && jj diff -r "$wip_id" --name-only)" "wip.txt" "WIP change still holds exactly its file"
+repo="$(make_repo stale-stack)"
+(cd "$repo" && echo spec > spec.md && jj commit -m "Add spec" >/dev/null 2>&1)
+land_sibling "$repo"
+spec_id="$(cd "$repo" && jj log -r @- --no-graph -T 'change_id.short()')"
+before="$(cd "$repo" && jj log -r @ --no-graph -T 'commit_id')"
+set +e; fc_err="$(cd "$repo" && "$FRESH" 2>&1 >/dev/null)"; fc_code=$?; set -e
+assert_eq "$fc_code" "1" "a stack forked from an older trunk stops fresh-change"
+[[ "$fc_err" == *"jj rebase -s $spec_id -d main"* ]] && pass "stop names the rebase command" || fail "unexpected message: $fc_err"
+assert_eq "$(cd "$repo" && jj log -r @ --no-graph -T 'commit_id')" "$before" "the stopped run leaves @ untouched"
+fork="$(cd "$repo" && "$TRUNK_REV" --fork-point @)"
+assert_eq "$fork" "$(cd "$repo" && jj log -r 'description(exact:"base\n")' --no-graph -T 'commit_id')" "fork point is where the stack left trunk"
+(cd "$repo" && "$REVIEW_PKG" spec.md "$fork" @ "$TEST_ROOT/fork.diff" >/dev/null 2>&1) || : > "$TEST_ROOT/fork.diff"
+files="$(sed -n '/^## Files changed/,/^## Diff/p' "$TEST_ROOT/fork.diff")"
+[[ "$files" == *spec.md* && "$files" != *l.txt* ]] && pass "review from the fork point shows only the stack" || fail "fork-point review package: $files"
+(cd "$repo" && "$REVIEW_PKG" spec.md "$(jj log -r main --no-graph -T 'commit_id')" @ "$TEST_ROOT/trunk.diff" >/dev/null)
+[[ "$(cat "$TEST_ROOT/trunk.diff")" == *l.txt* ]] && pass "fixture: diffing from the trunk commit shows the sibling landing (the hazard)" || fail "fixture did not reproduce the hazard"
 
 # Regression: pre-origin topology where trunk() carries an extra local label (e.g.
 # `fork-base`). The bookmark must come from a main/master/trunk label, never that one.
@@ -160,7 +238,7 @@ pre="$TEST_ROOT/pre-origin"; mkdir -p "$pre/repo"; git init -q --bare "$pre/upst
   && jj bookmark untrack main@upstream >/dev/null 2>&1)
 labels="$(cd "$pre/repo" && jj log -r 'trunk()' --no-graph -T 'bookmarks')"
 [[ "$labels" == fork-base* ]] && pass "fixture: fork-base is the first label on trunk()" || fail "fixture labels unexpected: $labels"
-assert_eq "$(cd "$pre/repo" && "$TRUNK_REV")" "trunk() main" "never returns a co-located non-trunk label as the trunk bookmark"
+assert_eq "$(cd "$pre/repo" && "$TRUNK_REV")" "main main" "never returns a co-located non-trunk label as the trunk bookmark"
 
 # Case 4: not a jj repo -> exit 2 with the contract message.
 plain="$TEST_ROOT/plain"; mkdir -p "$plain"

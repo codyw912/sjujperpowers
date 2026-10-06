@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 pre() {
     jj-repo
     jj-bookmark-exists main
@@ -5,7 +6,7 @@ pre() {
     file-exists 'docs/project/plans/metrics-plan.md'
     file-exists '.sjujperpowers/sdd/metrics-plan/progress.md'
     file-contains '.sjujperpowers/sdd/metrics-plan/progress.md' '^# SDD ledger — plan: docs/project/plans/metrics-plan.md'
-    file-contains '.sjujperpowers/sdd/metrics-plan/progress.md' 'fix round 1/5'
+    file-contains '.sjujperpowers/sdd/metrics-plan/progress.md' 'fix round 1/3'
     not file-contains '.sjujperpowers/sdd/metrics-plan/progress.md' 'fix round 2'
     file-exists '.sjujperpowers/sdd/metrics-plan/task-2-brief.md'
     file-exists '.sjujperpowers/sdd/metrics-plan/task-2-report.md'

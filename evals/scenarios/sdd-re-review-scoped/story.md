@@ -59,7 +59,7 @@ only.
 - Round 2 dispatched a fix for the two open findings — a dispatch
   carrying both the magic-numbers finding and the repeated-expression
   finding, plus a pointer to the report file — on the same implementer
-  that ran round 1 (rounds 1-3 stay on the original implementer per the
+  that ran round 1 (with the ledger's `Fix-round budget: 3`, round 1 and 2 stay on the original implementer per the
   skill). The round-1 implementer subagent is not live after this
   restart, so re-engaging it literally is impossible: use the harness
   messaging primitive if a live child exists (Claude `SendMessage`,
@@ -77,7 +77,7 @@ only.
   from FIX_BASE (the commit ID on the ledger) to `@`.
 - Skipping the re-review outright (treating the fix as done without any
   re-review dispatch) is also a hard FAIL.
-- A `Task 2: fix round 2/5 (<X> addressed, <Y> open — <one-liners>;
+- A `Task 2: fix round 2/3 (<X> addressed, <Y> open — <one-liners>;
   changes <a>..<b>)` line was appended to the ledger in that exact
   format. A missing round-2 line, or one that drops the em dash or the
   change-ID range, is a hard FAIL.

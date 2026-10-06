@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Copy a plan's rulings out of the ignored SDD workspace into a file that
+# survives workspace cleanup. Print the written path relative to the repo root.
+#
+# The progress ledger lives in a git-ignored scratch directory that
+# finishing deletes after a local landing. Every `Ruling:` line and every
+# `over fix-round budget` line is a decision made on the operator's behalf;
+# this writes them next to the plan, <plan dir>/<plan-basename>-rulings.md,
+# where the controller commits them with the stack. The plan already sits
+# under <docsRoot>/plans/, so the file follows docsRoot.
+#
+# The workspace location comes from sdd-workspace, its single source of
+# truth. Re-running overwrites the file, so it is idempotent.
+#
+# Usage: export-rulings PLAN_FILE
+set -euo pipefail
+
+if [ $# -ne 1 ]; then
+  echo "usage: export-rulings PLAN_FILE" >&2
+  exit 2
+fi
+
+plan=$1
+[ -f "$plan" ] || { echo "no such plan file: $plan" >&2; exit 2; }
+
+here=$(cd "$(dirname "$0")" && pwd)
+dir=$("$here/sdd-workspace" "$plan")
+if ! root=$(jj root 2>/dev/null); then
+  echo "This isn't a jj repo. Run \`jj git init --colocate\` and re-run, or tell me to continue without VCS steps." >&2
+  exit 2
+fi
+
+ledger="$dir/progress.md"
+[ -f "$ledger" ] || { echo "no ledger for this plan: $ledger" >&2; exit 2; }
+
+slug=$(basename "$plan" .md)
+out="$(cd "$(dirname "$plan")" && pwd -P)/${slug}-rulings.md"
+
+# Print each ledger line matching $1 as a bullet, or `None.` when none match.
+bullets() {
+  local lines
+  lines=$(grep -F -- "$1" "$ledger" || true)
+  if [ -n "$lines" ]; then
+    printf '%s\n' "$lines" | sed 's/^/- /'
+  else
+    echo "None."
+  fi
+}
+
+{
+  echo "# Rulings: ${slug}"
+  echo
+  bullets "Ruling:"
+  echo
+  echo "## Over fix-round budget"
+  echo
+  bullets "over fix-round budget"
+} > "$out"
+
+echo "${out#"$root"/}"

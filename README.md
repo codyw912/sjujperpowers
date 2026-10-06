@@ -127,6 +127,8 @@ The roadmap and execution slots are independent: `file + kata` and `plane + sess
 
 `docsRoot` controls the repository-relative root for the roadmap, specs, and plans. It defaults to `docs/project`; set it in the same file, for example to `"engineering/project"`, to match an existing documentation layout.
 
+`"sdd": { "fixRounds": N }` sets the per-task fix-round budget for subagent-driven-development (integer 1–10, default 3).
+
 A Plane roadmap with Kata execution:
 
 ```json
@@ -178,6 +180,9 @@ Kata-backed plans label roots and executable children separately, and children b
 - **test-driven-development** — RED-GREEN-REFACTOR cycle
 - **systematic-debugging** — 4-phase root cause process
 - **verification-before-completion** — Ensure it's actually fixed
+- **verifying-by-risk** — Risk-scaled verification, verdict ledger, and a short operator brief
+- **creating-a-verification-skill** — Generate a rerunnable project verify skill
+- **learning-from-feedback** — Turn operator corrections into durable checks
 - **dispatching-parallel-agents** — Concurrent subagent workflows
 - **writing-skills** — Create and test new skills
 
