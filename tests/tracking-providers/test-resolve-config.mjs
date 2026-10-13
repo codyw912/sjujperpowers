@@ -63,6 +63,30 @@ test('plane and kata configuration is normalized', () => {
   );
 });
 
+test('linear configuration is normalized with and without a project', () => {
+  assert.deepEqual(
+    normalizeConfig(
+      { version: 1, roadmap: { provider: 'linear', team: ' CEW ' } },
+      '/repo/config.json',
+    ).roadmap,
+    { provider: 'linear', team: 'CEW' },
+  );
+  assert.deepEqual(
+    normalizeConfig(
+      { version: 1, roadmap: { project: ' Pilot ', team: 'CEW2', provider: 'linear' } },
+      '/repo/config.json',
+    ).roadmap,
+    { provider: 'linear', team: 'CEW2', project: 'Pilot' },
+  );
+});
+
+test('unknown roadmap provider error lists every registered provider', () => {
+  assert.throws(
+    () => normalizeConfig({ version: 1, roadmap: { provider: 'jira' } }, '/repo/config.json'),
+    { message: '/repo/config.json: roadmap.provider must be one of: file, plane, linear, none' },
+  );
+});
+
 test('roadmap and execution slots remain independent', () => {
   assert.deepEqual(
     normalizeConfig(
@@ -152,7 +176,6 @@ for (const [name, config, field] of [
   ['escaping docs root', { version: 1, docsRoot: '../project' }, 'docsRoot'],
   ['backslash docs root', { version: 1, docsRoot: 'docs\\project' }, 'docsRoot'],
   ['unknown roadmap provider', { version: 1, roadmap: { provider: 'jira' } }, 'roadmap.provider'],
-  ['reserved linear provider', { version: 1, roadmap: { provider: 'linear', project: 'x' } }, 'roadmap.provider'],
   ['missing Plane project', { version: 1, roadmap: { provider: 'plane' } }, 'roadmap.project'],
   ['wrong Plane project type', { version: 1, roadmap: { provider: 'plane', project: 3 } }, 'roadmap.project'],
   ['project on file provider', { version: 1, roadmap: { provider: 'file', project: 'x' } }, 'roadmap.project'],
@@ -173,6 +196,27 @@ for (const [name, config, field] of [
     assert.throws(
       () => normalizeConfig(config, '/repo/config.json'),
       new RegExp(`/repo/config\\.json: ${field.replace('.', '\\.')} `),
+    );
+  });
+}
+
+for (const [name, roadmap, message] of [
+  ['missing Linear team', { provider: 'linear' }, 'roadmap.team must be a non-empty string'],
+  ['blank Linear team', { provider: 'linear', team: '  ' }, 'roadmap.team must be a non-empty string'],
+  ['wrong Linear team type', { provider: 'linear', team: 3 }, 'roadmap.team must be a non-empty string'],
+  ['lowercase Linear team', { provider: 'linear', team: 'cew' }, 'roadmap.team must be an uppercase Linear team key such as CEW'],
+  ['digit-first Linear team', { provider: 'linear', team: '9AB' }, 'roadmap.team must be an uppercase Linear team key such as CEW'],
+  ['punctuated Linear team', { provider: 'linear', team: 'C-W' }, 'roadmap.team must be an uppercase Linear team key such as CEW'],
+  ['blank Linear project', { provider: 'linear', team: 'CEW', project: '' }, 'roadmap.project must be a non-empty string'],
+  ['team on Plane provider', { provider: 'plane', project: 'x', team: 'CEW' }, 'roadmap.team is not valid for provider plane'],
+  ['team on file provider', { provider: 'file', team: 'CEW' }, 'roadmap.team is not valid for provider file'],
+  ['team on none provider', { provider: 'none', team: 'CEW' }, 'roadmap.team is not valid for provider none'],
+  ['unknown roadmap key', { provider: 'linear', team: 'CEW', workspace: 'cewlabs' }, 'roadmap.workspace is not supported'],
+]) {
+  test(`${name} fails with its exact message`, () => {
+    assert.throws(
+      () => normalizeConfig({ version: 1, roadmap }, '/repo/config.json'),
+      { message: `/repo/config.json: ${message}` },
     );
   });
 }
