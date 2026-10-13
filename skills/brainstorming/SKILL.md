@@ -96,7 +96,7 @@ your path and complete them in order.
 For architectural work, use `docsRoot` from the checked provider configuration for every roadmap, spec, and plan path below. `docs/project` is only the default.
 
 **Architectural:**
-1. **Explore project context** — check files, docs, recent commits. Resolve the roadmap and execution providers first. For `file`, read `docs/project/roadmap.md` when present and state the milestone; if none fits, Revise first or proceed as `Milestone: none (unplanned)` with a Decisions line. For `plane`, require and state an existing `plane:<identifier>` outcome without editing the file roadmap. For `none`, state the explicit no-roadmap source. If the file provider has no roadmap AND the request is a new project, invoke roadmapping before continuing.
+1. **Explore project context** — check files, docs, recent commits. Resolve the roadmap and execution providers first. For `file`, read `docs/project/roadmap.md` when present and state the milestone; if none fits, Revise first or proceed as `Milestone: none (unplanned)` with a Decisions line. For `plane` or `linear`, require and state an existing `plane:<identifier>` or `linear:<TEAM>-<n>` outcome without editing the file roadmap. For `none`, state the explicit no-roadmap source. If the file provider has no roadmap AND the request is a new project, invoke roadmapping before continuing.
 2. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 3. **Propose 2-3 approaches** — with trade-offs and your recommendation
 4. **Present design** — in sections scaled to their complexity, get user approval after each section
@@ -209,7 +209,7 @@ is the whole process.
 - Write the validated design (spec) to `docs/project/specs/YYYY-MM-DD-<topic>-design.md`
   - (User preferences for spec location override this default)
   - For `file`, put `**Milestone:** M<N> — <title>` (or `**Milestone:** none (unplanned)`) immediately under the title.
-  - For `plane`, put the exact `**Outcome:** plane:<identifier>` immediately under the title.
+  - For `plane` or `linear`, put the exact `**Outcome:** plane:<identifier>` or `**Outcome:** linear:<TEAM>-<n>` immediately under the title.
   - For `none` or bootstrap work, put `**Outcome:** none (bootstrap)` and explain why.
 - Only the `file` provider may add the spec path to `docs/project/roadmap.md` and move a planned milestone to `active`.
 - Use elements-of-style:writing-clearly-and-concisely skill if available

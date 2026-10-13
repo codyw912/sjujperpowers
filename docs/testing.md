@@ -39,13 +39,16 @@ Run the deterministic parser, configuration, and materialization contracts:
 ```bash
 node --test tests/tracking-providers/test-resolve-config.mjs
 node --test tests/tracking-providers/test-materialize-plan.mjs
+node --test tests/tracking-providers/test-roadmap-providers.mjs
 ```
 
-Run both behavioral fixtures:
+Run the behavioral fixtures:
 
 ```bash
 evals/run setup tracking-providers-plane
 evals/run post tracking-providers-plane <fixture-dir>
+evals/run setup tracking-providers-linear
+evals/run post tracking-providers-linear <fixture-dir>
 evals/run setup tracking-providers-kata
 evals/run post tracking-providers-kata <fixture-dir>
 evals/run setup tracking-providers-kata-landed

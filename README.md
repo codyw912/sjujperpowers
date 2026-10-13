@@ -94,7 +94,7 @@ For reproducible installs, append `#<tag-or-full-commit>` to either Git source.
 ## The workflow
 
 1. **tracking-providers** (`sjujperpowers:tracking-providers`) — Resolve repository-local provider policy and preflight selected execution services.
-2. **roadmapping** (`sjujperpowers:roadmapping`) — Capture an outcome in a file roadmap, reference an external Plane work item, or skip durable roadmap state.
+2. **roadmapping** (`sjujperpowers:roadmapping`) — Capture an outcome in a file roadmap, reference an external Plane work item or Linear issue, or skip durable roadmap state.
 3. **brainstorming** (`sjujperpowers:brainstorming`) — Refine the outcome into a versioned spec.
 4. **writing-plans** (`sjujperpowers:writing-plans`) — Break the spec into numbered tasks. A Kata-backed plan materializes a non-executable plan root plus one executable child per task.
 5. **starting-a-change** (`sjujperpowers:starting-a-change`) — Claim a configured Kata child, when applicable, then isolate work on a fresh change on `trunk()`.
@@ -156,7 +156,19 @@ A repository with both durable provider slots disabled:
 }
 ```
 
-Supported roadmap providers are `file`, `plane`, and `none`; execution providers are `session`, `kata`, and `none`. Kata is optional. When selected, its executable, daemon, and project must pass preflight before any issue or repository mutation.
+Supported roadmap providers are `file`, `plane`, `linear`, and `none`; execution providers are `session`, `kata`, and `none`. Kata is optional. When selected, its executable, daemon, and project must pass preflight before any issue or repository mutation.
+
+A Linear roadmap names a team key; references are that team's issue keys, such as `linear:CEW-123`, and `project` is optional:
+
+```json
+{
+  "version": 1,
+  "roadmap": { "provider": "linear", "team": "CEW", "project": "Example Product" },
+  "execution": { "provider": "kata", "project": "example-product" }
+}
+```
+
+Linear support is reference-only, like Plane.
 
 Use one Plane workspace as the portfolio boundary and projects as product or repository ownership boundaries. On Community Edition, use modules for focused initiatives and linked work items in each participating project for cross-project efforts. Plane owns outcomes and priorities; Sjujperpowers only renders curated roll-ups, never silent remote mutations.
 
