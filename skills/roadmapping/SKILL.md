@@ -59,17 +59,17 @@ Read the file. Report in ≤10 lines: the active milestone, its done-when, open 
 
 ### Plane
 
-Require an existing provider-qualified outcome such as `plane:PROJ-12`. Plane support is reference-based: never claim to create, edit, or close the work item. Do not create or update `docs/project/roadmap.md`.
+Work from a provider-qualified outcome such as `plane:PROJ-12`. Plane support is reference-based: this workflow never creates, edits, or closes the work item on its own. Do not create or update `docs/project/roadmap.md`.
 
-Orient by reporting the supplied outcome reference, the configured Plane project, known acceptance context, and the next spec. If the request needs a new or revised outcome, explain that it must be changed in Plane and stop until an existing reference is available.
+Orient by reporting the supplied outcome reference, the configured Plane project, known acceptance context, and the next spec. If the request needs a new or revised outcome: when the repository's instructions or your human partner authorize tracker writes and a tracker tool is available, create or update it there and continue with the resulting reference; otherwise ask for the reference and stop.
 
 On Plane editions without Initiatives, use modules for focused initiatives and linked work items for cross-project efforts. Never assume the Initiatives feature exists.
 
 ### Linear
 
-Require an existing provider-qualified outcome such as `linear:CEW-123`. Linear issue keys belong to the configured team, not a project: an issue keeps its `CEW-<n>` key in every project of team `CEW`. Linear support is reference-based: never claim to create, edit, or close the issue. Do not create or update `docs/project/roadmap.md`. The reference is taken as given, not verified; an issue you cannot see is not a reason to stop.
+Work from a provider-qualified outcome such as `linear:CEW-123`. Linear issue keys belong to the configured team, not a project: an issue keeps its `CEW-<n>` key in every project of team `CEW`. Linear support is reference-based: this workflow never creates, edits, or closes the issue on its own. Do not create or update `docs/project/roadmap.md`. The reference is taken as given, not verified; an issue you cannot see is not a reason to stop.
 
-Orient by reporting the supplied outcome reference, the configured Linear team and project (when set), known acceptance context, and the next spec. If the request needs a new or revised outcome, explain that it must be changed in Linear and stop until an existing reference is available.
+Orient by reporting the supplied outcome reference, the configured Linear team and project (when set), known acceptance context, and the next spec. If the request needs a new or revised outcome: when the repository's instructions or your human partner authorize tracker writes and a tracker tool is available, create or update it there and continue with the resulting reference; otherwise ask for the reference and stop.
 
 ### None
 

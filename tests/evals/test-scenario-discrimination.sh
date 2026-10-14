@@ -194,6 +194,27 @@ fx=$(fixture $s); (cd "$fx" && linear_backlog_outcome 'linear:CEW-7' ''); expect
 fx=$(fixture $s); (cd "$fx" && linear_backlog_outcome 'linear:CEW-7' "CEW-7 pending $spec"); expect bad $s "$fx"
 fx=$(fixture $s); (cd "$fx" && linear_backlog_outcome 'none (bootstrap)' "CEW-7 $cid $spec"); expect bad $s "$fx"
 
+# --- tracking-providers-linear-create-outcome: a direct request creates the outcome
+create_outcome_spec() {
+  local spec=docs/project/specs/2026-09-02-health-report-design.md
+  mkdir -p docs/project/specs
+  printf '# Health Report Design\n\n**Outcome:** %s\n' "$1" > "$spec"
+  jj commit "$spec" -m 'Add health-report design spec' >/dev/null
+}
+s=tracking-providers-linear-create-outcome
+fx=$(fixture $s); (cd "$fx" && create_outcome_spec 'linear:CEW-232'); expect good $s "$fx"
+fx=$(fixture $s); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && create_outcome_spec 'none (bootstrap)'); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && create_outcome_spec 'linear:CEW-<n>'); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && mkdir -p docs/project/specs && printf '# Health Report Design\n\n**Outcome:** linear:CEW-232\n' > docs/project/specs/2026-09-02-health-report-design.md); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && create_outcome_spec 'linear:CEW-232' && mkdir -p docs/project/plans && printf '# Plan\n' > docs/project/plans/2026-09-02-health-report.md); expect bad $s "$fx"
+
+# --- tracking-providers-linear-no-outcome: provider choice alone authorizes nothing
+s=tracking-providers-linear-no-outcome
+fx=$(fixture $s); expect good $s "$fx"
+fx=$(fixture $s); (cd "$fx" && mkdir -p docs/project/specs && printf '# Health Report Design\n\n**Outcome:** linear:CEW-234\n' > docs/project/specs/2026-09-02-health-report-design.md); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && create_outcome_spec 'linear:CEW-234'); expect bad $s "$fx"
+
 # --- tracking-providers-kata: keep-as-is preserves open execution state
 kata_cmd() { PATH="$PWD/.test-bin:$PATH" kata --project sjujperpowers "$@"; }
 kata_keep_good() {

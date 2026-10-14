@@ -154,9 +154,13 @@ kata --project <project> --json list \
 
 Sort the returned issues numerically by `metadata["sjujperpowers.task"]`. Reconcile that list with the execution or SDD recovery ledger and supply the lowest-numbered child not marked complete to starting-a-change. Open completed children intentionally remain open until the configured landing or publication milestone, so open-state alone cannot identify the next task. Project-wide `kata next` is only for work without a named plan.
 
+## External roadmap providers
+
+Choosing `plane` or `linear` as the roadmap provider neither authorizes nor forbids tracker operations. It only fixes how the roadmap workflow treats the outcome reference: taken as given, not verified, never created, edited or closed by that workflow. Whether you may read or write the tracker for any other reason is decided by the repository's instructions and your human partner, not by this provider choice: when they ask you to read or update the tracker through a mounted tool, do so.
+
 ## Plane edition compatibility
 
-Plane support is reference-based: the lifecycle skills never create, update, or close the outcome work item on your behalf. A human or a separately authorized integration applies curated roll-ups. This constrains the skills, not you: if the repository's instructions or your human partner ask you to read or update Plane through a mounted tool, do so; reference-only means the roadmap workflow does not do it for you.
+Plane support is reference-based (see External roadmap providers): the lifecycle skills never create, update, or close the outcome work item on their own. A human or a separately authorized integration applies curated roll-ups.
 
 Use modules to group focused initiatives on Plane editions without Initiatives. Coordinate cross-project efforts with linked work items in each participating project rather than assuming a paid or unavailable Initiative feature.
 
@@ -164,7 +168,7 @@ Use modules to group focused initiatives on Plane editions without Initiatives. 
 
 Repository instructions about backlog use (for example an `AGENTS.md` that requires keeping tracker issues current) take precedence over this section, per `using-sjujperpowers`.
 
-Linear support is reference-based, like Plane: the lifecycle skills never create, update, or close the outcome issue on your behalf, and this skill never calls Linear. A human or a separately authorized integration applies curated roll-ups. This constrains the skills, not you: if the repository's instructions or your human partner ask you to read or update Linear through a mounted tool, do so; reference-only means the roadmap workflow does not do it for you.
+Linear support is reference-based, like Plane (see External roadmap providers): the lifecycle skills never create, update, or close the outcome issue on their own. A human or a separately authorized integration applies curated roll-ups.
 
 Treat a supplied `linear:<TEAM>-<n>` reference as authoritative: the roadmap workflow never verifies that the issue exists, and an issue you cannot see is not a reason to stop or to substitute another outcome. Requirements and acceptance criteria come from your human partner in the conversation; a mounted Linear tool may add context but never replaces that conversation.
 
