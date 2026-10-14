@@ -49,6 +49,8 @@ evals/run setup tracking-providers-plane
 evals/run post tracking-providers-plane <fixture-dir>
 evals/run setup tracking-providers-linear
 evals/run post tracking-providers-linear <fixture-dir>
+evals/run setup tracking-providers-linear-backlog
+evals/run post tracking-providers-linear-backlog <fixture-dir>
 evals/run setup tracking-providers-kata
 evals/run post tracking-providers-kata <fixture-dir>
 evals/run setup tracking-providers-kata-landed

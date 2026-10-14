@@ -179,6 +179,21 @@ fx=$(fixture $s); (cd "$fx" && linear_provider_outcome 'linear:DEMO-12' 'linear:
 fx=$(fixture $s); (cd "$fx" && linear_provider_outcome 'linear:DEMO-12' 'DEMO-12'); expect bad $s "$fx"
 fx=$(fixture $s); (cd "$fx" && linear_provider_outcome 'plane:DEMO-12' 'plane:DEMO-12'); expect bad $s "$fx"
 
+# --- tracking-providers-linear-backlog: repo instructions require a tracker comment
+linear_backlog_outcome() {
+  local outcome=$1 log=$2
+  mkdir -p docs/project/specs
+  printf '# Health Report Design\n\n**Outcome:** %s\n' "$outcome" > docs/project/specs/2026-09-02-health-report-design.md
+  [ -z "$log" ] || printf '%s\n' "$log" > docs/project/tracker-log.md
+}
+s=tracking-providers-linear-backlog
+cid=9cf8ea9f-1515-4279-a468-7c39ee0a096b
+spec=docs/project/specs/2026-09-02-health-report-design.md
+fx=$(fixture $s); (cd "$fx" && linear_backlog_outcome 'linear:CEW-7' "CEW-7 $cid $spec"); expect good $s "$fx"
+fx=$(fixture $s); (cd "$fx" && linear_backlog_outcome 'linear:CEW-7' ''); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && linear_backlog_outcome 'linear:CEW-7' "CEW-7 pending $spec"); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && linear_backlog_outcome 'none (bootstrap)' "CEW-7 $cid $spec"); expect bad $s "$fx"
+
 # --- tracking-providers-kata: keep-as-is preserves open execution state
 kata_cmd() { PATH="$PWD/.test-bin:$PATH" kata --project sjujperpowers "$@"; }
 kata_keep_good() {

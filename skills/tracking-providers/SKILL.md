@@ -156,15 +156,17 @@ Sort the returned issues numerically by `metadata["sjujperpowers.task"]`. Reconc
 
 ## Plane edition compatibility
 
-Plane support is reference-based: do not claim to create, update, or close remote work automatically. A human or a separately authorized integration applies curated roll-ups.
+Plane support is reference-based: the lifecycle skills never create, update, or close the outcome work item on your behalf. A human or a separately authorized integration applies curated roll-ups. This constrains the skills, not you: if the repository's instructions or your human partner ask you to read or update Plane through a mounted tool, do so; reference-only means the roadmap workflow does not do it for you.
 
 Use modules to group focused initiatives on Plane editions without Initiatives. Coordinate cross-project efforts with linked work items in each participating project rather than assuming a paid or unavailable Initiative feature.
 
 ## Linear
 
-Linear support is reference-based, like Plane: lifecycle skills never create, update, or close Linear issues, and never call the Linear API or a Linear MCP tool. A human or a separately authorized integration applies curated roll-ups.
+Repository instructions about backlog use (for example an `AGENTS.md` that requires keeping tracker issues current) take precedence over this section, per `using-sjujperpowers`.
 
-Treat a supplied `linear:<TEAM>-<n>` reference as authoritative without looking it up: a reference-only provider never verifies that the issue exists. Take requirements and acceptance criteria from your human partner in the conversation, not from Linear. An issue you cannot see is not a reason to stop or to substitute another outcome.
+Linear support is reference-based, like Plane: the lifecycle skills never create, update, or close the outcome issue on your behalf, and this skill never calls Linear. A human or a separately authorized integration applies curated roll-ups. This constrains the skills, not you: if the repository's instructions or your human partner ask you to read or update Linear through a mounted tool, do so; reference-only means the roadmap workflow does not do it for you.
+
+Treat a supplied `linear:<TEAM>-<n>` reference as authoritative: the roadmap workflow never verifies that the issue exists, and an issue you cannot see is not a reason to stop or to substitute another outcome. Requirements and acceptance criteria come from your human partner in the conversation; a mounted Linear tool may add context but never replaces that conversation.
 
 ## Completion boundary
 
