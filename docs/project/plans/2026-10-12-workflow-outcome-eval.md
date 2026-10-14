@@ -25,7 +25,7 @@
 - Image builds, the smoke run, and the scored run each need the operator's explicit approval in the conversation first; inference runs also need a spending cap.
 - Usage is reported as Yacht's per-trial token counts (input, cache read, output); dollar cost is not reported because the subscription models carry no prices (operator ruling after smoke run 2).
 - yacht-evals's default workspace holds unrelated user WIP (`@` is the described change `nnurtuwq` with uncommitted `21-questions.html` and `evals/guardrail/FINDINGS.md`, above unlanded `rylnrpll`). Never work in, rebase, or build on it. All work happens in a separate jj workspace on `main`; commit only by fileset (`jj commit <paths> -m …`), never a bare `jj commit`.
-- Plan, spec, and execution tracking stay in Sjujperpowers under `plane:SJUP-2`; nothing is added to yacht-evals's own `docs/superpowers` tracking.
+- Plan, spec, and execution tracking stay in Sjujperpowers under `plane:SJUP-2`; nothing is added to yacht-evals's own tracking docs.
 
 ## Conventions used by every task
 

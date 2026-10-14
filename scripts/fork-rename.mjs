@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Re-apply the fork's name transform after pulling upstream changes: the
 // upstream project name -> sjujperpowers in file contents, file names, and
-// directory names. Idempotent, and it leaves upstream attribution URLs
-// (github.com/obra/<upstream>/...) alone. The upstream name is assembled at
-// runtime so this file never contains it and cannot rewrite itself.
+// directory names. Idempotent, and it leaves upstream attributions alone:
+// URLs under github.com/obra/<upstream>/ and the <upstream>-evals repository
+// name. The upstream name is assembled at runtime so this file never
+// contains it and cannot rewrite itself.
 //
 // Usage: node scripts/fork-rename.mjs   (from the repo root)
 import fs from "node:fs";
@@ -13,7 +14,7 @@ const up = ["super", "powers"].join("");
 const fork = "sjujperpowers";
 const cap = s => s[0].toUpperCase() + s.slice(1);
 const pairs = [[up, fork], [cap(up), cap(fork)], [up.toUpperCase(), fork.toUpperCase()]];
-const keep = `obra/${up}`;
+const keepRe = new RegExp(`(${[`obra/${up}`, `${up}-evals`].join("|")})`);
 const skip = new Set([".jj", ".git", "node_modules", ".workspaces"]);
 
 const paths = [];
@@ -32,7 +33,7 @@ for (const p of paths) {
   const buf = fs.readFileSync(p);
   if (buf.includes(0)) continue; // binary
   const s = buf.toString("utf8");
-  const t = s.split(keep).map(seg => pairs.reduce((acc, [a, b]) => acc.replaceAll(a, b), seg)).join(keep);
+  const t = s.split(keepRe).map((seg, i) => (i % 2 ? seg : pairs.reduce((acc, [a, b]) => acc.replaceAll(a, b), seg))).join("");
   if (t !== s) { fs.writeFileSync(p, t); rewritten++; }
 }
 
