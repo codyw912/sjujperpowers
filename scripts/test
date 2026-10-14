@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# The declared deterministic test command (`test` in .sjujperpowers/risk.toml).
+# Runs every tests/*/test-*.sh with bash and every tests/*/test-*.mjs with
+# `node --test`, except the files in EXCLUDED. A test passes only when it exits
+# 0 and prints no skip line: a skip means a missing tool, not a pass.
+# Run it inside the dev environment: `devenv shell scripts/test`.
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT" || exit 1
+
+EXCLUDED=(
+  # Drives `claude -p`.
+  tests/claude-code/test-subagent-driven-development.sh
+  # Drives `claude -p`.
+  tests/claude-code/test-subagent-driven-development-integration.sh
+  # Drives `opencode run` when OpenCode is installed.
+  tests/opencode/test-priority.sh
+  # Drives `opencode run` when OpenCode is installed.
+  tests/opencode/test-tools.sh
+  # Sourced by the claude-code tests; not a test.
+  tests/claude-code/test-helpers.sh
+  # Called with arguments by test-bootstrap-caching.sh; not a node:test file.
+  tests/opencode/test-bootstrap-caching.mjs
+)
+SKIP_LINE='^[[:space:]]*(\[SKIP\]|SKIP:)'
+
+jj --version >/dev/null 2>&1 || {
+  echo "scripts/test: jj is not on PATH or does not run; the tests need the host's jj" >&2
+  exit 1
+}
+
+for path in "${EXCLUDED[@]}"; do
+  [[ -f "$path" ]] || {
+    echo "scripts/test: excluded file $path does not exist; update EXCLUDED" >&2
+    exit 1
+  }
+done
+
+is_excluded() {
+  local path
+  for path in "${EXCLUDED[@]}"; do
+    [[ "$1" == "$path" ]] && return 0
+  done
+  return 1
+}
+
+shopt -s nullglob
+found=()
+for t in tests/*/test-*.sh tests/*/test-*.mjs; do
+  is_excluded "$t" || found+=("$t")
+done
+if [[ "${#found[@]}" -eq 0 ]]; then
+  echo "scripts/test: no tests found under tests/" >&2
+  exit 1
+fi
+mapfile -t tests < <(printf '%s\n' "${found[@]}" | sort)
+
+log="$(mktemp)"
+trap 'rm -f "$log"' EXIT
+passed=0
+for t in "${tests[@]}"; do
+  case "$t" in
+    *.mjs) node --test "$t" >"$log" 2>&1 </dev/null ;;
+    *) bash "$t" >"$log" 2>&1 </dev/null ;;
+  esac
+  status=$?
+  if [[ "$status" -ne 0 ]]; then
+    echo "FAIL $t (exit $status)"
+  elif grep -Eq "$SKIP_LINE" "$log"; then
+    echo "SKIP $t"
+  else
+    echo "ok   $t"
+    passed=$((passed + 1))
+    continue
+  fi
+  tail -n 20 "$log" | sed 's/^/     /'
+done
+
+echo "$passed/${#tests[@]} passed"
+[[ "$passed" -eq "${#tests[@]}" ]]
