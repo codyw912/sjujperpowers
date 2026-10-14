@@ -51,6 +51,10 @@ evals/run setup tracking-providers-linear
 evals/run post tracking-providers-linear <fixture-dir>
 evals/run setup tracking-providers-linear-backlog
 evals/run post tracking-providers-linear-backlog <fixture-dir>
+evals/run setup tracking-providers-linear-create-outcome
+evals/run post tracking-providers-linear-create-outcome <fixture-dir>
+evals/run setup tracking-providers-linear-no-outcome
+evals/run post tracking-providers-linear-no-outcome <fixture-dir>
 evals/run setup tracking-providers-kata
 evals/run post tracking-providers-kata <fixture-dir>
 evals/run setup tracking-providers-kata-landed

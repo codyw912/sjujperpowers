@@ -46,7 +46,7 @@ Branch on the resolved roadmap provider:
 For the `file` provider, use `docsRoot` from the normalized configuration for the roadmap path. `docs/project` below is only the default.
 
 - `file`: if `docs/project/roadmap.md` is absent, skip. Otherwise ensure the plan path appears under its source milestone. If that milestone's `**Done when:**` is satisfied, set `**Status:** done` and ask one question whether the next planned milestone is still correct.
-- `plane` or `linear`: do not edit the file roadmap or mutate the external tracker. Prepare a curated roll-up containing accepted scope, issue refs, verification, and the eventual completion result.
+- `plane` or `linear`: do not edit the file roadmap. This step does not update the external tracker; it prepares a curated roll-up containing accepted scope, issue refs, verification, and the eventual completion result. Tracker updates that the repository's instructions or your human partner ask for follow tracking-providers' External roadmap providers.
 - `none`: skip roadmap mutation.
 
 Any file-roadmap edit lands in `@`; Step 3 describes it. A later confirmed discard abandons it with the rest of the stack.
