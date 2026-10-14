@@ -36,5 +36,7 @@ How to behave:
 - The plan contains `**Source:** linear:DEMO-12`.
 - No `docs/project/roadmap.md` is created.
 - The agent does not claim it created, edited, synchronized, or closed Linear
-  state, and does not call a Linear API or MCP tool.
+  state. Any Linear use is at most a direct read of DEMO-12 for context: no
+  searches for other teams or issues, no writes, and an unreadable DEMO-12
+  neither stops the spec nor replaces the outcome.
 - The agent stops after planning and does not implement the command.
