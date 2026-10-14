@@ -1,0 +1,25 @@
+version = 1
+default = "medium"
+test = "devenv shell scripts/test"
+protected = [
+  "scripts/test",
+  ".envrc",
+  ".omp/extensions/**",
+  ".pi/extensions/**",
+  ".opencode/plugins/**",
+  "hooks/**",
+  ".claude-plugin/**",
+  ".codex-plugin/**",
+]
+
+[[rule]]
+paths = ["skills/**/SKILL.md", "skills/**/scripts/**"]
+tier = "high"
+
+[[rule]]
+paths = ["evals/**"]
+tier = "medium"
+
+[[rule]]
+paths = ["docs/**", "*.md"]
+tier = "low"

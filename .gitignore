@@ -13,3 +13,9 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .kata.local.toml
+
+# devenv / direnv
+.devenv*
+.direnv/
+devenv.local.nix
+devenv.local.yaml
