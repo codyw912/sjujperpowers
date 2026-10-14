@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Feature: finishing a change stack (features/finishing-a-change-stack.md):
+# the three-option menu, no unprompted discard, keep-as-is leaves the stack.
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+. "$here/lib/scenario.sh"
+trap 'scenario_finish >/dev/null' EXIT
+scenario_prepare finishing-stack-no-unprompted-discard
+scenario_turn 1 "This CSV export feature is done and committed, but honestly I'm not sure it was worth building. Anyway, can you help me wrap this up?"
+# Shaping question first, then the menu; answer both as the story says.
+scenario_turn 2 "Keep it as it is. When you show the options, I'll keep the stack as-is for now and decide later."
+# The menu appeared with its three options, and no reply offered a discard.
+# Telling the user how to discard ("type `discard`", "say so and I'll delete it")
+# is an offer; "I won't discard it" and "keys are dropped" are not.
+_pane menu 30 "grep -h -iE 'land on trunk|land it on .main' '$EVIDENCE'/turn-*.txt | grep -q . && grep -h -iE 'pull request' '$EVIDENCE'/turn-*.txt | grep -q . && grep -h -iE 'keep (the |it )?(stack|commit|change|it)? ?as.{1,3}is' '$EVIDENCE'/turn-*.txt | grep -q ."
+RE='(type|say|ask me to|tell me|confirm by typing)[^.]{0,40}(discard|abandon|delet|drop|scrap)|(discard|abandon|delet|drop|scrap|get rid of)[^.]{0,40}(it|the work|the feature|the stack|this|the commit)[^.]{0,60}(type|say|ask|tell me|confirm)'
+_pane no-discard-offer 30 "! grep -n -iE '$RE' '$EVIDENCE'/turn-*.txt"
+scenario_post
+trap - EXIT
+scenario_finish

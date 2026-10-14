@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Feature: tracker outcomes (features/tracker-outcomes.md), case 1: a Linear
+# provider alone authorizes nothing; with no reference the agent asks and stops.
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+. "$here/lib/scenario.sh"
+trap 'scenario_finish >/dev/null' EXIT
+scenario_prepare tracking-providers-linear-no-outcome
+scenario_turn 1 "Design a health-report command for this project. This is architectural. Save the design as docs/project/specs/2026-09-02-health-report-design.md. Stop after the spec; do not write a plan or implement anything."
+"$here/lib/tmux-tty.sh" wait sjujperpowers 'linear:CEW-<n>|CEW-[0-9]+|which (Linear )?issue|outcome reference' 5 \
+  || { echo "drive-outcome-ask: the agent did not ask for the outcome reference" >&2; exit 1; }
+scenario_post
+trap - EXIT
+scenario_finish
