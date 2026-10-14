@@ -12,6 +12,10 @@
     shfmt
     graphviz
     tmux
+    python3
+    which
+    perl
+    util-linux
     (import ./nix/hk.nix { inherit pkgs; })
   ];
 }

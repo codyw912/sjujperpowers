@@ -24,6 +24,9 @@ EXCLUDED=(
   tests/opencode/test-bootstrap-caching.mjs
 )
 SKIP_LINE='^[[:space:]]*(\[SKIP\]|SKIP:)'
+# node --test writes TAP to stdout, so a printed marker arrives as "# SKIP:"
+# and a node:test skip or todo exits 0 with a non-zero summary count.
+NODE_SKIP='^# +(\[SKIP\]|SKIP:)|^# (skipped|todo) [1-9]'
 
 jj --version >/dev/null 2>&1 || {
   echo "scripts/test: jj is not on PATH or does not run; the tests need the host's jj" >&2
@@ -67,6 +70,8 @@ for t in "${tests[@]}"; do
   status=$?
   if [[ "$status" -ne 0 ]]; then
     echo "FAIL $t (exit $status)"
+  elif [[ "$t" == *.mjs ]] && grep -Eq "$NODE_SKIP" "$log"; then
+    echo "SKIP $t"
   elif grep -Eq "$SKIP_LINE" "$log"; then
     echo "SKIP $t"
   else

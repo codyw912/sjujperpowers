@@ -3,6 +3,7 @@ default = "medium"
 test = "devenv shell scripts/test"
 protected = [
   "scripts/test",
+  ".envrc",
   ".omp/extensions/**",
   ".pi/extensions/**",
   ".opencode/plugins/**",

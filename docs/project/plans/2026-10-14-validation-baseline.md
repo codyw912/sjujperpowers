@@ -15,7 +15,7 @@
 ## Global Constraints
 
 - The declared test command is exactly `devenv shell scripts/test`.
-- A test passes only when it exits 0 and prints no line matching `^[[:space:]]*(\[SKIP\]|SKIP:)`.
+- A test passes only when it exits 0 and prints no line matching `^[[:space:]]*(\[SKIP\]|SKIP:)`. A `.mjs` file also fails when its output matches `^# +(\[SKIP\]|SKIP:)` or `^# (skipped|todo) [1-9]` (Node's TAP-wrapped markers, and a non-zero `# skipped` or `# todo` count).
 - Exclusions are exactly the six files in the spec's Test runner section; an exclusion naming a missing file fails the run.
 - jj is not in the dev environment; `scripts/test` exits 1 before running anything when `jj --version` does not succeed.
 - hk is 2.4.0, from `https://github.com/jdx/hk/releases/download/v2.4.0/hk-x86_64-unknown-linux-musl.tar.gz`, hash `sha256-80WYZxykC+XDCDJKYO8wtzbbu/QlnftRGr15AJ7k3io=`; x86_64-linux only.
