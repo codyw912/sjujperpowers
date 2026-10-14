@@ -19,7 +19,7 @@ Repositories may independently choose where roadmap outcomes and durable executi
 | SDD review rounds, briefs, reports, recovery; rulings are authored here and retained in the committed `<plan>-rulings.md` | Per-plan SDD workspace |
 | Implementation and landing history | Jujutsu |
 
-Roadmap and execution providers are independent. `file + kata` is as valid as `plane + kata`; Kata never requires Plane.
+Roadmap and execution providers are independent. `file + kata` is as valid as `plane + kata` or `linear + kata`; Kata never requires Plane or Linear.
 
 ## Configuration
 
@@ -63,10 +63,21 @@ No file means:
 Supported roadmap providers:
 
 - `file` — `docs/project/roadmap.md` owns outcomes.
-- `plane` — an existing `plane:<identifier>` owns the outcome; integration is reference-only.
+- `plane` — an existing `plane:<identifier>` owns the outcome; integration is reference-only. Requires `project`.
+- `linear` — an existing `linear:<TEAM>-<n>` issue owns the outcome; integration is reference-only. Requires `team`, an uppercase Linear team key such as `CEW`, and accepts an optional `project`.
 - `none` — no persistent roadmap authority.
 
-`linear` is reserved but unsupported. Do not accept it as configuration until a real provider exists.
+A Linear roadmap:
+
+```json
+{
+  "version": 1,
+  "roadmap": { "provider": "linear", "team": "CEW", "project": "Example Product" },
+  "execution": { "provider": "kata", "project": "example-product" }
+}
+```
+
+Linear issue keys belong to the team, not the project: an issue keeps `CEW-123` in any project of team `CEW`. `project` records which Linear project this repository's outcomes belong to; it never appears in a reference.
 
 Supported execution providers:
 
@@ -102,12 +113,13 @@ Failure stops before creating or editing a spec, plan, issue, or Jujutsu change.
 Specs use the roadmap provider's native header:
 
 - Plane: `**Outcome:** plane:PROJ-12`
+- Linear: `**Outcome:** linear:CEW-123`
 - File roadmap: `**Milestone:** M1 — Outcome title`
 - Bootstrap/no roadmap: `**Outcome:** none (bootstrap)`
 
 Plans carry one provider-neutral header copied or derived from the spec:
 
-- Plane: copy the outcome value as `**Source:** plane:PROJ-12`.
+- Plane or Linear: copy the outcome value unchanged, as `**Source:** plane:PROJ-12` or `**Source:** linear:CEW-123`.
 - File roadmap: convert `**Milestone:** M1 — Outcome title` to
   `**Source:** file:M1 — Outcome title`.
 - No roadmap: copy the value as `**Source:** none (bootstrap)`.
@@ -129,7 +141,7 @@ node <tracking-providers skill dir>/scripts/materialize-plan.mjs \
 
 The command repeats checked provider resolution before mutation, creates one containment parent plus one child per numbered plan task, and prints normalized refs. The parent is labeled `sjujperpowers-plan`; children are labeled `sjujperpowers-task`. Every child also blocks the parent, so the parent cannot become ready before all children close. Automatic selection MUST use `kata next --label sjujperpowers-task --json` and can never claim a plan root.
 
-Stable idempotency keys derive from the Kata project and repository-relative plan path, so retry the same command after a partial failure; do not create replacement issues manually. The parent and children record `sjujperpowers.plan`, `sjujperpowers.spec`, and `sjujperpowers.source` metadata. Children additionally record `sjujperpowers.task`. The source is provider-neutral, so `file + kata`, `plane + kata`, and bootstrap sources materialize identically.
+Stable idempotency keys derive from the Kata project and repository-relative plan path, so retry the same command after a partial failure; do not create replacement issues manually. The parent and children record `sjujperpowers.plan`, `sjujperpowers.spec`, and `sjujperpowers.source` metadata. Children additionally record `sjujperpowers.task`. The source is provider-neutral, so `file + kata`, `plane + kata`, `linear + kata`, and bootstrap sources materialize identically.
 
 Recover a named plan's mapping in a fresh session with:
 
@@ -147,6 +159,12 @@ Sort the returned issues numerically by `metadata["sjujperpowers.task"]`. Reconc
 Plane support is reference-based: do not claim to create, update, or close remote work automatically. A human or a separately authorized integration applies curated roll-ups.
 
 Use modules to group focused initiatives on Plane editions without Initiatives. Coordinate cross-project efforts with linked work items in each participating project rather than assuming a paid or unavailable Initiative feature.
+
+## Linear
+
+Linear support is reference-based, like Plane: lifecycle skills never create, update, or close Linear issues, and never call the Linear API or a Linear MCP tool. A human or a separately authorized integration applies curated roll-ups.
+
+Treat a supplied `linear:<TEAM>-<n>` reference as authoritative without looking it up: a reference-only provider never verifies that the issue exists. Take requirements and acceptance criteria from your human partner in the conversation, not from Linear. An issue you cannot see is not a reason to stop or to substitute another outcome.
 
 ## Completion boundary
 

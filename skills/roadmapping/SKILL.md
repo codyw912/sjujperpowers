@@ -7,7 +7,7 @@ description: Use when starting a new project, when a brainstorm reveals work too
 
 ## Overview
 
-Roadmapping orients work to the configured outcome authority. The default `file` provider uses `docs/project/roadmap.md`; `plane` carries an existing external outcome reference without editing a local roadmap; `none` intentionally skips persistent roadmap state. Milestones and external outcomes are results, not tickets. Hierarchy: roadmap source → spec → plan → task.
+Roadmapping orients work to the configured outcome authority. The default `file` provider uses `docs/project/roadmap.md`; `plane` and `linear` carry an existing external outcome reference without editing a local roadmap; `none` intentionally skips persistent roadmap state. Milestones and external outcomes are results, not tickets. Hierarchy: roadmap source → spec → plan → task.
 
 **Announce at start:** "I'm using the roadmapping skill to [create | revise | orient] the project roadmap."
 
@@ -64,6 +64,12 @@ Require an existing provider-qualified outcome such as `plane:PROJ-12`. Plane su
 Orient by reporting the supplied outcome reference, the configured Plane project, known acceptance context, and the next spec. If the request needs a new or revised outcome, explain that it must be changed in Plane and stop until an existing reference is available.
 
 On Plane editions without Initiatives, use modules for focused initiatives and linked work items for cross-project efforts. Never assume the Initiatives feature exists.
+
+### Linear
+
+Require an existing provider-qualified outcome such as `linear:CEW-123`. Linear issue keys belong to the configured team, not a project: an issue keeps its `CEW-<n>` key in every project of team `CEW`. Linear support is reference-based: never claim to create, edit, or close the issue, and do not call the Linear API or a Linear MCP tool. Do not create or update `docs/project/roadmap.md`. Treat the supplied reference as authoritative without looking it up; an issue you cannot see is not a reason to stop.
+
+Orient by reporting the supplied outcome reference, the configured Linear team and project (when set), known acceptance context, and the next spec. If the request needs a new or revised outcome, explain that it must be changed in Linear and stop until an existing reference is available.
 
 ### None
 

@@ -72,7 +72,7 @@ independently testable deliverable.
 **Spec:** [path to the spec/design doc this plan implements — the plan
 argues from the spec, so the spec travels with it; executors read both]
 
-**Source:** [copy or derive the approved spec's source: copy `plane:PROJ-12` or `none (bootstrap)`; convert `M1 — <title>` to `file:M1 — <title>`]
+**Source:** [copy or derive the approved spec's source: copy `plane:PROJ-12`, `linear:CEW-123`, or `none (bootstrap)`; convert `M1 — <title>` to `file:M1 — <title>`]
 
 ## Global Constraints
 
@@ -84,7 +84,7 @@ include this section.]
 ---
 ```
 
-For a file-roadmap spec, convert `**Milestone:** M1 — Title` to `**Source:** file:M1 — Title`. For Plane and bootstrap specs, copy the value from `**Outcome:**` unchanged. This source is independent of the execution provider.
+For a file-roadmap spec, convert `**Milestone:** M1 — Title` to `**Source:** file:M1 — Title`. For Plane, Linear, and bootstrap specs, copy the value from `**Outcome:**` unchanged. This source is independent of the execution provider.
 
 ## Task Structure
 
@@ -164,7 +164,7 @@ After the self-review, commit the plan file by name — never a bare `jj commit`
 jj commit docs/project/plans/YYYY-MM-DD-<feature-name>.md -m "Add <feature> implementation plan"
 ```
 
-If the plan serves a `file` roadmap milestone, include the roadmap edit (plan path under `**Plans:**`) in the same fileset: `jj commit docs/project/plans/<file>.md docs/project/roadmap.md -m …`. Never edit the file roadmap for `plane` or `none`.
+If the plan serves a `file` roadmap milestone, include the roadmap edit (plan path under `**Plans:**`) in the same fileset: `jj commit docs/project/plans/<file>.md docs/project/roadmap.md -m …`. Never edit the file roadmap for `plane`, `linear`, or `none`.
 
 If the resolved execution provider is `kata`, materialize only after the plan commit:
 

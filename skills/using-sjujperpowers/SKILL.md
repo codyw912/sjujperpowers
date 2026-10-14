@@ -33,7 +33,7 @@ When multiple skills apply, process skills come first — they set the approach,
 - "Let's build X" → sjujperpowers:brainstorming first, then implementation skills.
 - "Where are we / what's next" → sjujperpowers:roadmapping.
 - "Fix this bug" → sjujperpowers:systematic-debugging first, then domain skills.
-- "Use Plane/Kata tracking" → the lifecycle skill, then sjujperpowers:tracking-providers before mutation.
+- "Use Plane/Linear/Kata tracking" → the lifecycle skill, then sjujperpowers:tracking-providers before mutation.
 
 ## Red Flags
 

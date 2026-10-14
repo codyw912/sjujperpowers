@@ -7,6 +7,8 @@ import { posix, resolve, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { ROADMAP_KEYS, ROADMAP_PROVIDERS, roadmapProvider } from './roadmap-providers.mjs';
+
 const execFile = promisify(execFileCallback);
 const DEFAULT_DOCS_ROOT = 'docs/project';
 
@@ -72,23 +74,14 @@ function normalizeDocsRoot(raw, configPath) {
 function normalizeRoadmap(raw, configPath) {
   if (raw === undefined) return { provider: 'file' };
   if (!isObject(raw)) throw invalid(configPath, 'roadmap', 'must be an object');
-  rejectUnknownKeys(raw, ['provider', 'project'], configPath, 'roadmap');
+  rejectUnknownKeys(raw, ROADMAP_KEYS, configPath, 'roadmap');
 
-  const provider = raw.provider;
-  if (!['file', 'plane', 'none'].includes(provider)) {
-    throw invalid(configPath, 'roadmap.provider', 'must be one of: file, plane, none');
+  const provider = roadmapProvider(raw.provider);
+  if (provider === undefined) {
+    const names = ROADMAP_PROVIDERS.map(({ name }) => name).join(', ');
+    throw invalid(configPath, 'roadmap.provider', `must be one of: ${names}`);
   }
-
-  if (provider === 'plane') {
-    return {
-      provider,
-      project: requireProject(raw.project, configPath, 'roadmap.project'),
-    };
-  }
-  if (raw.project !== undefined) {
-    throw invalid(configPath, 'roadmap.project', `is not valid for provider ${provider}`);
-  }
-  return { provider };
+  return provider.normalize(raw, (field, message) => invalid(configPath, field, message));
 }
 
 function normalizeExecution(raw, configPath) {

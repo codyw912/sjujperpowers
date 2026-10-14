@@ -157,6 +157,28 @@ s=tracking-providers-plane
 fx=$(fixture $s); (cd "$fx" && plane_provider_outcome 'plane:DEMO-12'); expect good $s "$fx"
 fx=$(fixture $s); (cd "$fx" && plane_provider_outcome 'DEMO-12'); expect bad $s "$fx"
 
+# --- tracking-providers-linear: provider-qualified source propagation
+linear_provider_outcome() {
+  local outcome=$1 source=$2
+  mkdir -p docs/project/specs docs/project/plans
+  cat > docs/project/specs/2026-09-02-health-report-design.md <<EOF
+# Health Report Design
+
+**Outcome:** $outcome
+EOF
+  cat > docs/project/plans/2026-09-02-health-report.md <<EOF
+# Health Report Implementation Plan
+
+**Spec:** \`docs/project/specs/2026-09-02-health-report-design.md\`
+
+**Source:** $source
+EOF
+}
+s=tracking-providers-linear
+fx=$(fixture $s); (cd "$fx" && linear_provider_outcome 'linear:DEMO-12' 'linear:DEMO-12'); expect good $s "$fx"
+fx=$(fixture $s); (cd "$fx" && linear_provider_outcome 'linear:DEMO-12' 'DEMO-12'); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && linear_provider_outcome 'plane:DEMO-12' 'plane:DEMO-12'); expect bad $s "$fx"
+
 # --- tracking-providers-kata: keep-as-is preserves open execution state
 kata_cmd() { PATH="$PWD/.test-bin:$PATH" kata --project sjujperpowers "$@"; }
 kata_keep_good() {

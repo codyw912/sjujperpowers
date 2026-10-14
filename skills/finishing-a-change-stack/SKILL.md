@@ -46,7 +46,7 @@ Branch on the resolved roadmap provider:
 For the `file` provider, use `docsRoot` from the normalized configuration for the roadmap path. `docs/project` below is only the default.
 
 - `file`: if `docs/project/roadmap.md` is absent, skip. Otherwise ensure the plan path appears under its source milestone. If that milestone's `**Done when:**` is satisfied, set `**Status:** done` and ask one question whether the next planned milestone is still correct.
-- `plane`: do not edit the file roadmap or mutate Plane. Prepare a curated roll-up containing accepted scope, issue refs, verification, and the eventual completion result.
+- `plane` or `linear`: do not edit the file roadmap or mutate the external tracker. Prepare a curated roll-up containing accepted scope, issue refs, verification, and the eventual completion result.
 - `none`: skip roadmap mutation.
 
 Any file-roadmap edit lands in `@`; Step 3 describes it. A later confirmed discard abandons it with the rest of the stack.
@@ -179,7 +179,7 @@ For pull-request completion, replace `--commit` with `--pr <url>` when a stable 
 
 When a verdict exists, append the `verdict.mjs summary` output saved before the bookmark moved to the parent's close message (local land) so the durable record carries it. For pull-request completion the PR body already carries it. Keep-as-is, discard, and failed outcomes record nothing extra.
 
-For Plane, render one curated roll-up after the action and Kata finalization. Do not apply it or close the external outcome automatically.
+For Plane or Linear, render one curated roll-up after the action and Kata finalization. Do not apply it or close the external outcome automatically.
 
 ## Step 7: Workspace Cleanup
 
