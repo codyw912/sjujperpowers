@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Preflight for the drive scripts: every tool they call, and a working agent.
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+root=$(cd "$here/../../../.." && pwd)
+fail() { printf 'doctor: %s\n' "$*" >&2; exit 1; }
+for tool in tmux jj omp node grep sed; do
+  command -v "$tool" >/dev/null || fail "$tool is not on PATH (run inside the dev shell: devenv shell $0)"
+done
+jj --version >/dev/null 2>&1 || fail "jj does not run; the drive scripts need the host's jj"
+[ -x "$root/evals/run" ] || fail "missing $root/evals/run"
+[ -d "$root/skills/tracking-providers" ] || fail "missing $root/skills/tracking-providers"
+node -e 'process.exit(0)' || fail "node does not run"
+out=$(cd "$(mktemp -d)" && timeout 120 omp -p --no-extensions --no-session 'Reply with exactly: PONG' 2>&1) || fail "omp -p failed: $out"
+printf '%s\n' "$out" | grep -q PONG || fail "omp answered without PONG (check model credentials): $out"
+grep -q '"linear"' "$HOME/.omp/agent/mcp.json" 2>/dev/null \
+  || fail "no linear MCP server in ~/.omp/agent/mcp.json; the tracker features need it"
+echo "doctor: ok"

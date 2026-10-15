@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Feature: tracker outcomes (features/tracker-outcomes.md), case 2: a direct
+# request creates the Linear outcome in-session and the spec carries its key.
+# Writes one real "[eval scratch]" issue in Linear team CEW.
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+. "$here/lib/scenario.sh"
+trap 'scenario_finish >/dev/null' EXIT
+scenario_prepare tracking-providers-linear-create-outcome
+scenario_turn 1 "Create a Linear issue in team CEW titled '[eval scratch] verify-sjujperpowers outcome' and use it as the outcome for designing a health-report command. This is architectural. Save the design as docs/project/specs/2026-09-02-health-report-design.md. Stop after the spec; do not write a plan or implement anything."
+# The agent may stop at a design question; answer it once, as the story says.
+if [ ! -f "$FIXTURE/docs/project/specs/2026-09-02-health-report-design.md" ]; then
+  scenario_turn 2 "Keep it the smallest boring thing: a command that prints one JSON object containing status: ok. I approve the design if it carries the Linear outcome and no local roadmap. When the spec is written and committed, consider it approved; stop there."
+fi
+_pane created 30 "grep -h -o 'mcp__linear_save_issue' '$RUN'/sessions/*.jsonl | head -1 | grep -q . && grep -m1 '^\\*\\*Outcome' '$FIXTURE/docs/project/specs/2026-09-02-health-report-design.md'"
+scenario_post
+trap - EXIT
+scenario_finish

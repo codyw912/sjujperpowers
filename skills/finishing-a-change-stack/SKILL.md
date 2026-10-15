@@ -97,11 +97,11 @@ Exit 1 means the verdict is void or missing. Shaping rewrites commits, so a squa
 
 **Failed is a stop.** A `current` verdict is not always a green one: `check` only tests currency, not the grade. Read `row.grade` from its output; on `failed` report the failing `row.runs` and stop — no menu, as in Step 1's "If tests fail". `blocked` is not a stop: the brief surfaces it and the operator decides.
 
-**Protected:** run `node <verifying-by-risk skill dir>/scripts/classify-risk.mjs --repo "$(jj root)"` now, at the head you will land, and read `protected` and `protectedPaths` from that output. Never take them from the ledger row, the brief, or an earlier JSON. If `protected` is true, list those paths and ask for explicit approval to land or publish them, naming those paths. A menu number alone is not that approval. Without it, only Option 3 or a typed `discard` is available.
+**Protected:** run `node <verifying-by-risk skill dir>/scripts/classify-risk.mjs --repo "$(jj root)"` now, at the head you will land, and read `protected` and `protectedPaths` from that output. Never take them from the ledger row, the brief, or an earlier JSON. If `protected` is true, list those paths and ask for explicit approval to land or publish them, naming those paths. A menu number alone is not that approval. Without it, only Option 3 is available.
 
 ## Step 5: Present Options
 
-Present exactly these 3 options, then wait:
+Your Step 5 message is exactly two parts, in order: the operator brief, then this block. It ends at `Which option?`.
 
 ```
 Implementation complete. What would you like to do?
@@ -113,7 +113,7 @@ Implementation complete. What would you like to do?
 Which option?
 ```
 
-Discard is not on the menu. It happens only when the user types `discard` (see below).
+Then wait. Discard is not on the menu. It happens only when the user types `discard` (see below). Telling them how to discard ("say `discard`", "type `discard` to drop it") is offering it, wherever in the message it appears.
 
 ### Option 1: Land on trunk locally
 
@@ -137,7 +137,7 @@ Run `verdict.mjs check` and the fresh classification before pushing; the same ru
 
 ### Option 3: Keep as-is
 
-Report the stack's change IDs. Leave bookmarks and workspaces untouched.
+Leave bookmarks and workspaces untouched. Your reply to the user is three lines: the stack's change IDs, the head commit ID, and "Nothing was moved." Then run Step 6 for the configured providers.
 
 ### If the user asks to discard the work
 
@@ -205,6 +205,7 @@ If subagent-driven development supplied a per-plan recovery workspace, remove on
 | "Tests passed earlier this session" | Run the suite on the tree you are about to land. |
 | "They obviously want it landed" | Present the menu and wait. |
 | "I'll offer to discard — they seem done" | Discard is not on the menu. Only when they ask. |
+| "They doubted the feature, so I'll tell them how to drop it" | That is the offer. Their doubt is not a request. The brief and the menu are the whole answer. |
 | "'Yeah, get rid of it' counts" | Only the typed word `discard` authorizes `jj abandon`. |
 | "The push was rejected — force-push will fix it" | Stop. Investigate. Never force-push unless they ask. |
 | "Trunk is obviously `main`" | Use `trunk-rev`'s answer and its bookmark. Wrong trunk is expensive to undo. |

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Feature: verifying a stack by risk (features/verifying-by-risk.md): a stack
+# that rewrites risk.toml stays high and protected, and with only same-family
+# models the grade is blocked.
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+. "$here/lib/scenario.sh"
+trap 'scenario_finish >/dev/null' EXIT
+scenario_prepare verifying-by-risk-protected-stack
+scenario_turn 1 "This stack was implemented by Claude. Verify it with sjujperpowers:verifying-by-risk and write the brief. Only Claude-family models are available in this harness."
+scenario_post
+trap - EXIT
+scenario_finish
