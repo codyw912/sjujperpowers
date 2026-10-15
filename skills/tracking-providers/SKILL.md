@@ -158,6 +158,17 @@ Sort the returned issues numerically by `metadata["sjujperpowers.task"]`. Reconc
 
 Choosing `plane` or `linear` as the roadmap provider neither authorizes nor forbids tracker operations. It only fixes how the roadmap workflow treats the outcome reference: taken as given, not verified, never created, edited or closed by that workflow. Whether you may read or write the tracker for any other reason is decided by the repository's instructions and your human partner, not by this provider choice: when they ask you to read or update the tracker through a mounted tool, do so.
 
+Backlog reads for this repository are scoped to it. With one tracker team
+shared by several repositories, "the team's issues" and "this repository's
+issues" differ: filter by the configured scope — `roadmap.project` for Plane,
+`roadmap.team` plus `roadmap.project` for Linear. When Linear's optional
+`roadmap.project` is absent, ask your human partner which project this
+repository's work belongs to before any backlog discovery; do not substitute
+an unfiltered team query, and do not block reference-only work (a supplied
+`linear:<TEAM>-<n>` needs no backlog read). A team-wide or cross-project
+listing is cross-repository work: do it only when your human partner asks
+for it, never to choose this repository's next task.
+
 ## Plane edition compatibility
 
 Plane support is reference-based (see External roadmap providers): the lifecycle skills never create, update, or close the outcome work item on their own. A human or a separately authorized integration applies curated roll-ups.

@@ -47,6 +47,7 @@ misconfigured, not that the agent failed.
 | `tracking-providers-linear-backlog` | repository backlog instructions followed with the mounted Linear tool, in-session (writes a real comment on scratch issue CEW-7) | new |
 | `tracking-providers-linear-create-outcome` | a direct request to create the Linear outcome is carried out in-session and the spec carries the returned key (creates a real `[eval scratch]` issue in team CEW) | new |
 | `tracking-providers-linear-no-outcome` | with no reference, no `AGENTS.md`, and no write request, the agent asks for the reference and creates nothing | new |
+| `tracking-providers-linear-scoped-discovery` | asked for its next task, the agent queries only the configured project, never the whole team, and records the scope it used | new |
 | `tracking-providers-kata` | checked preflight, named-plan recovery, claim-before-association, and keep-open completion | new |
 | `tracking-providers-kata-landed` | landing-before-close ordering, child-before-root close, and delayed recovery cleanup | new |
 | `verifying-by-risk-protected-stack` | policy from local `main`, whole-stack range, protected override, blocked without a different-family verifier | new |

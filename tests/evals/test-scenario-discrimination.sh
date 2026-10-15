@@ -215,6 +215,16 @@ fx=$(fixture $s); expect good $s "$fx"
 fx=$(fixture $s); (cd "$fx" && mkdir -p docs/project/specs && printf '# Health Report Design\n\n**Outcome:** linear:CEW-234\n' > docs/project/specs/2026-09-02-health-report-design.md); expect bad $s "$fx"
 fx=$(fixture $s); (cd "$fx" && create_outcome_spec 'linear:CEW-234'); expect bad $s "$fx"
 
+# --- tracking-providers-linear-scoped-discovery: discovery uses the configured project
+scoped_log() { mkdir -p docs/project; printf '%s\n' "$1" > docs/project/tracker-log.md; }
+s=tracking-providers-linear-scoped-discovery
+fx=$(fixture $s); (cd "$fx" && scoped_log 'discovery CEW Sjujperpowers CEW-7'); expect good $s "$fx"
+fx=$(fixture $s); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && scoped_log 'discovery CEW - CEW-7'); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && scoped_log 'discovery CEW Bloomery CEW-218'); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && scoped_log $'discovery CEW Sjujperpowers CEW-7\ndiscovery CEW Bloomery CEW-218'); expect bad $s "$fx"
+fx=$(fixture $s); (cd "$fx" && scoped_log 'discovery CEW Sjujperpowers CEW-7' && mkdir -p docs/project && printf '# Roadmap\n' > docs/project/roadmap.md); expect bad $s "$fx"
+
 # --- tracking-providers-kata: keep-as-is preserves open execution state
 kata_cmd() { PATH="$PWD/.test-bin:$PATH" kata --project sjujperpowers "$@"; }
 kata_keep_good() {
